@@ -1,5 +1,8 @@
+import "./index.css";
 import React, { useEffect } from "react";
 import { useState } from "react";
+import startSound from "./assets/beep-start.mp3";
+import endSound from "./assets/beep-end.mp3";
 
 class Character {
   constructor(id) {
@@ -77,8 +80,10 @@ function Game({ props }) {
   const [allCharacterList, setAllCharacterList] = useState([]);
   const roomColorList = ["red", "green", "blue", "mid", "yellow"];
   const [roomList, setRoomList] = useState([]);
-  const [gameStatus, setGameStatus] = useState("setup");
+  const [gameStatus, setGameStatus] = useState("SETUP");
   const [currentPlayerCardReveal, setCurrentPlayerCardReveal] = useState(undefined);
+  const [isPlayerCardRevealed, setIsPlayerCardRevealed] = useState(false);
+  const [isShowingPlayerTurnCard, setIsShowingPlayerTurnCard] = useState(false);
   const [playerSequence, setPlayerSequence] = useState(
     Array.from({ length: playerNum }, (_value, index) => index)
   );
@@ -134,7 +139,7 @@ function Game({ props }) {
 
       async function pause() {
         await sleep(2000);
-        setGameStatus("player card reveal");
+        setGameStatus("PLAYER_CARD_REVEAL");
         setCurrentPlayerCardReveal(playerList[0]);
       }
       pause();
@@ -142,20 +147,41 @@ function Game({ props }) {
   }, [allCharacterList]);
 
   useEffect(() => {
-    if (gameStatus === "player card reveal") {
+    if (gameStatus === "PLAYER_CARD_REVEAL") {
+      function playStartSound() {
+        new Audio(startSound).play();
+      }
+
+      function playEndSound() {
+        new Audio(endSound).play();
+      }
+
       async function revealWait() {
         for (const player of playerList) {
           setCurrentPlayerCardReveal(player);
-          await sleep(5000); // Wait for 5 seconds before moving to the next player
+          await sleep(2000);
+          setIsPlayerCardRevealed(true);
+          playStartSound();
+          await sleep(3000);
+          setIsPlayerCardRevealed(false);
+          await sleep(1000);
+          playEndSound();
+          // TODO: "Ready Player (number)"" is briefly shown after the card is already shown, change it so that it doesn't display --- CT's Task
         }
+
+        setGameStatus("START");
       }
 
       revealWait();
+    } else if (gameStatus === "START") {
+      async function showGameStartCard() {
+        await sleep(2000);
+        setGameStatus("PLAYER_TURN");
+      }
+
+      showGameStartCard();
     }
   }, [gameStatus]);
-  // useEffect(() => {
-  //   console.log(roomList);
-  // }, [roomList]);
 
   return (
     <div className="h-full w-full flex justify-center items-center bg-gray-200">
@@ -183,22 +209,41 @@ function Game({ props }) {
         ))}
       </div>
 
-      {/* Player Card Reveal Section */}
-      {gameStatus === "player card reveal" ? (
-        <div className="h-full w-full absolute top-0 left-0">
-          <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-10"></div>
-          <div className="h-full w-full flex flex-col justify-center items-center p-10">
-            <span className="text-[3rem] font-bold z-[20]">
-              Player {currentPlayerCardReveal.playerId + 1} Card Reveal
-            </span>
-            <div className="h-[75%] w-[30%] bg-white rounded-xl z-[20] m-10 flex justify-center items-center">
-              <span className="text-[10rem] font-bold">{currentPlayerCardReveal.id}</span>
+      {
+        // Player Card Reveal Section
+        gameStatus === "PLAYER_CARD_REVEAL" ? (
+          <div className="h-full w-full absolute top-0 left-0">
+            <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
+            <div
+              className={`h-full w-full flex flex-col justify-center items-center p-10 z-[20] ${
+                isPlayerCardRevealed ? "" : "hidden"
+              }`}>
+              <span className="text-[3rem] font-bold">
+                Player {currentPlayerCardReveal.playerId + 1} Card Reveal
+              </span>
+              <div className="h-[75%] w-[30%] bg-white rounded-xl m-10 flex justify-center items-center z-[20]">
+                <span className="text-[10rem] font-bold">{currentPlayerCardReveal.id}</span>
+              </div>
+            </div>
+            <div
+              className={`h-full w-full absolute flex justify-center items-center p-10 z-[20] ${
+                isPlayerCardRevealed ? "hidden" : ""
+              }`}>
+              <span className="text-[4rem] font-bold bg-white py-5 px-10 rounded-xl">
+                Ready Player {currentPlayerCardReveal.playerId + 1}
+              </span>
             </div>
           </div>
-        </div>
-      ) : (
-        <></>
-      )}
+        ) : // Player Turn Section
+        gameStatus === "START" ? (
+          <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
+            <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
+            <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20]">GAME START</div>
+          </div>
+        ) : (
+          <></>
+        )
+      }
     </div>
   );
 }
