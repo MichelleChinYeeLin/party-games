@@ -1,19 +1,23 @@
 import React, { useEffect } from "react";
 import { useState } from "react";
 
-function Character(id) {
-  this.id = id;
-  this.isPlayer = false;
-  this.playerId = -1;
-  this.isAlive = true;
-  this.currentRoom = "";
+class Character {
+  constructor(id) {
+    this.id = id;
+    this.isPlayer = false;
+    this.playerId = -1;
+    this.isAlive = true;
+    this.currentRoom = "";
+  }
 }
 
-function Room(id) {
-  this.id = id;
-  this.color = "";
-  this.capacity = 0;
-  this.characterList = new Array();
+class Room {
+  constructor(id) {
+    this.id = id;
+    this.color = "";
+    this.capacity = 0;
+    this.characterList = [];
+  }
 }
 
 const CostumePartyDetective = () => {
@@ -65,7 +69,6 @@ const CostumePartyDetective = () => {
 
 function Game({ props }) {
   let playerNum = props.playerNum;
-  const [isSetup, setIsSetup] = useState(true);
   const maxCharacters = 20;
   const [characterList, setCharacterList] = useState(
     Array.from({ length: maxCharacters }, (_value, index) => new Character(index))
@@ -74,7 +77,13 @@ function Game({ props }) {
   const [allCharacterList, setAllCharacterList] = useState([]);
   const roomColorList = ["red", "green", "blue", "mid", "yellow"];
   const [roomList, setRoomList] = useState([]);
-  const [playerSequence, setPlayerSequence] = useState(Array.from({ length: playerNum}, (_value, index) => index));
+  const [gameStatus, setGameStatus] = useState("setup");
+  const [currentPlayerCardReveal, setCurrentPlayerCardReveal] = useState(undefined);
+  const [playerSequence, setPlayerSequence] = useState(
+    Array.from({ length: playerNum }, (_value, index) => index)
+  );
+
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   useEffect(() => {
     if (playerList.length < playerNum) {
@@ -122,9 +131,28 @@ function Game({ props }) {
       });
 
       setRoomList(tempRoomList);
+
+      async function pause() {
+        await sleep(2000);
+        setGameStatus("player card reveal");
+        setCurrentPlayerCardReveal(playerList[0]);
+      }
+      pause();
     }
   }, [allCharacterList]);
 
+  useEffect(() => {
+    if (gameStatus === "player card reveal") {
+      async function revealWait() {
+        for (const player of playerList) {
+          setCurrentPlayerCardReveal(player);
+          await sleep(5000); // Wait for 5 seconds before moving to the next player
+        }
+      }
+
+      revealWait();
+    }
+  }, [gameStatus]);
   // useEffect(() => {
   //   console.log(roomList);
   // }, [roomList]);
@@ -133,7 +161,8 @@ function Game({ props }) {
     <div className="h-full w-full flex justify-center items-center bg-gray-200">
       <div className="h-[80%] w-[80%] grid grid-cols-3 gap-0">
         {roomList.map((room) => (
-          <div key={"room: " + room.color}
+          <div
+            key={"room: " + room.color}
             className={`flex flex-wrap justify-center items-center ${
               room.color === "red"
                 ? "col-span-2 bg-red-300"
@@ -145,12 +174,31 @@ function Game({ props }) {
                 ? "bg-gray-300"
                 : "col-span-2 bg-yellow-300"
             }`}>
-              {room.characterList.map((character) => (
-                <div className="h-[3rem] w-[3rem] bg-white text-black text-lg border border-black rounded-lg flex justify-center items-center p-2 m-2">{character.id}</div>
-              ))}
-            </div>
+            {room.characterList.map((character) => (
+              <div className="h-[3rem] w-[3rem] bg-white text-black text-lg border border-black rounded-lg flex justify-center items-center p-2 m-2 hover:bg-gray-200">
+                {character.id}
+              </div>
+            ))}
+          </div>
         ))}
       </div>
+
+      {/* Player Card Reveal Section */}
+      {gameStatus === "player card reveal" ? (
+        <div className="h-full w-full absolute top-0 left-0">
+          <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-10"></div>
+          <div className="h-full w-full flex flex-col justify-center items-center p-10">
+            <span className="text-[3rem] font-bold z-[20]">
+              Player {currentPlayerCardReveal.playerId + 1} Card Reveal
+            </span>
+            <div className="h-[75%] w-[30%] bg-white rounded-xl z-[20] m-10 flex justify-center items-center">
+              <span className="text-[10rem] font-bold">{currentPlayerCardReveal.id}</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <></>
+      )}
     </div>
   );
 }
