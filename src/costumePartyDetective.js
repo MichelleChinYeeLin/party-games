@@ -261,7 +261,8 @@ function Game({ props }) {
             (currentRoomColor === "YELLOW" && selectedRoom.color === "RED") ||
             (currentRoomColor === "BLUE" && selectedRoom.color === "GREEN") ||
             (currentRoomColor === "GREEN" && selectedRoom.color === "BLUE") ||
-            (currentRoomColor !== diceRollColor && selectedRoom.color !== diceRollColor)
+            (currentRoomColor !== diceRollColor && selectedRoom.color !== diceRollColor) ||
+            (currentRoomColor === selectedRoom.color)
           ) {
             console.log("invalid move");
           } else {
