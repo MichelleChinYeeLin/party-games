@@ -4,6 +4,17 @@ import { useState } from "react";
 import startSound from "./assets/beep-start.mp3";
 import endSound from "./assets/beep-end.mp3";
 
+const GameStatus = {
+  SETUP: "SETUP",
+  PLAYER_CARD_REVEAL: "PLAYER_CARD_REVEAL",
+  START: "START",
+  PLAYER_TURN_START: "PLAYER_TURN_START",
+  PLAYER_TURN_DICE_ROLL: "PLAYER_TURN_DICE_ROLL",
+  PLAYER_TURN: "PLAYER_TURN",
+  PLAYER_TURN_COMPLETE: "PLAYER_TURN_COMPLETE",
+  PLAYER_TURN_DICE_ROLL: "PLAYER_TURN_DICE_ROLL",
+};
+
 class Character {
   constructor(id) {
     this.id = id;
@@ -25,6 +36,12 @@ class Room {
 }
 
 const CostumePartyDetective = () => {
+  fetch("/api").then(
+    response => response.json()
+  ).then(
+    data => {console.log(data)}
+  )
+
   const [isSetup, setIsSetup] = useState(true);
   const maxPlayerNum = 8;
   const maxPlayerList = [];
@@ -81,10 +98,9 @@ function Game({ props }) {
   const [allCharacterList, setAllCharacterList] = useState([]);
   const roomColorList = ["RED", "GREEN", "BLUE", "MID", "YELLOW"];
   const [roomList, setRoomList] = useState([]);
-  const [gameStatus, setGameStatus] = useState("SETUP");
+  const [gameStatus, setGameStatus] = useState(GameStatus.SETUP);
   const [currentPlayerCardReveal, setCurrentPlayerCardReveal] = useState(undefined);
   const [isPlayerCardRevealed, setIsPlayerCardRevealed] = useState(false);
-  const [isShowingPlayerTurnCard, setIsShowingPlayerTurnCard] = useState(false);
   const [playerSequence, setPlayerSequence] = useState(
     Array.from({ length: playerNum }, (_value, index) => index)
   );
@@ -116,7 +132,7 @@ function Game({ props }) {
 
   useEffect(() => {
     // Initialize rooms when all characters are set
-    if (gameStatus === "SETUP" && allCharacterList.length > 0) {
+    if (gameStatus === GameStatus.SETUP && allCharacterList.length > 0) {
       let availableRoomList = Array.from(roomColorList, (_value, index) => new Room(index));
       let tempRoomList = [];
       let tempCharacterList = [...allCharacterList];
@@ -142,7 +158,7 @@ function Game({ props }) {
 
       async function pause() {
         await sleep(2000);
-        setGameStatus("PLAYER_CARD_REVEAL");
+        setGameStatus(GameStatus.PLAYER_CARD_REVEAL);
         setCurrentPlayerCardReveal(playerList[0]);
       }
       pause();
@@ -150,7 +166,7 @@ function Game({ props }) {
   }, [allCharacterList]);
 
   useEffect(() => {
-    if (gameStatus === "PLAYER_CARD_REVEAL") {
+    if (gameStatus === GameStatus.PLAYER_CARD_REVEAL) {
       function playStartSound() {
         new Audio(startSound).play();
       }
@@ -172,37 +188,43 @@ function Game({ props }) {
           // TODO: "Ready Player (number)"" is briefly shown after the card is already shown, change it so that it doesn't display --- CT's Task
         }
 
-        setGameStatus("START");
+        setGameStatus(GameStatus.START);
       }
 
       revealWait();
-    } else if (gameStatus === "START") {
+    } else if (gameStatus === GameStatus.START) {
       async function showGameStartCard() {
         await sleep(2000);
-        setGameStatus("PLAYER_TURN_START");
+        setGameStatus(GameStatus.PLAYER_TURN_START);
       }
       showGameStartCard();
-    } else if (gameStatus === "PLAYER_TURN_START") {
+    } else if (gameStatus === GameStatus.PLAYER_TURN_START) {
       async function showPlayerTurnCard() {
         await sleep(2000);
         colorDiceRoll();
-        setGameStatus("PLAYER_TURN_DICE_ROLL");
+        setGameStatus(GameStatus.PLAYER_TURN_DICE_ROLL);
       }
       showPlayerTurnCard();
-    } else if (gameStatus === "PLAYER_TURN_DICE_ROLL") {
+    } else if (gameStatus === GameStatus.PLAYER_TURN_DICE_ROLL) {
       async function showDiceRollCard() {
         await sleep(3000);
-        setGameStatus("PLAYER_TURN");
+        setGameStatus(GameStatus.PLAYER_TURN);
       }
       showDiceRollCard();
+    } else if (gameStatus === GameStatus.PLAYER_TURN_COMPLETE) {
+      let tempPlayerSequence = [...playerSequence];
+      let playerIndex = tempPlayerSequence[0];
+      console.log(playerIndex);
+      tempPlayerSequence.splice(0, 1);
+      tempPlayerSequence.push(playerIndex);
+      setPlayerSequence(tempPlayerSequence);
+      setGameStatus(GameStatus.PLAYER_TURN_START);
     }
   }, [gameStatus]);
 
-  useEffect(() => {}, [playerSequence]);
-
   useEffect(() => {
-    console.log(diceRollColor);
-  }, [diceRollColor]);
+    console.log(playerSequence);
+  }, [playerSequence]);
 
   function colorDiceRoll() {
     let diceRollColors = ["RED", "GREEN", "BLUE", "YELLOW", "BLACK", "BLACK"];
@@ -211,7 +233,7 @@ function Game({ props }) {
   }
 
   function onCharacterSelected(event) {
-    if (gameStatus !== "PLAYER_TURN") {
+    if (gameStatus !== GameStatus.PLAYER_TURN) {
       return;
     }
 
@@ -219,10 +241,8 @@ function Game({ props }) {
 
     if (selectedCharacter === newSelectedCharacter) {
       setSelectedCharacter(-1);
-      // console.log("ehh");
     } else {
       setSelectedCharacter(newSelectedCharacter);
-      // console.log(newSelectedCharacter);
     }
   }
 
@@ -231,7 +251,11 @@ function Game({ props }) {
   }, [selectedCharacter]);
 
   function onRoomSelected(event) {
-    if (gameStatus === "PLAYER_TURN" && selectedCharacter !== -1 && diceRollColor !== "BLACK") {
+    if (
+      gameStatus === GameStatus.PLAYER_TURN &&
+      selectedCharacter !== -1 &&
+      diceRollColor !== "BLACK"
+    ) {
       let selectedRoomId = event.currentTarget.getAttribute("room-id");
 
       // Validate if character can be moved to selected room
@@ -256,13 +280,14 @@ function Game({ props }) {
             }
           });
 
+          // If invalid move
           if (
             (currentRoomColor === "RED" && selectedRoom.color === "YELLOW") ||
             (currentRoomColor === "YELLOW" && selectedRoom.color === "RED") ||
             (currentRoomColor === "BLUE" && selectedRoom.color === "GREEN") ||
             (currentRoomColor === "GREEN" && selectedRoom.color === "BLUE") ||
             (currentRoomColor !== diceRollColor && selectedRoom.color !== diceRollColor) ||
-            (currentRoomColor === selectedRoom.color)
+            currentRoomColor === selectedRoom.color
           ) {
             console.log("invalid move");
           } else {
@@ -283,19 +308,59 @@ function Game({ props }) {
               }
             });
             character.currentRoomId = selectedRoom.id;
+            setAllCharacterList(tempAllCharacterList);
+            setSelectedCharacter(-1);
+            setRoomList(tempRoomList);
+            setGameStatus(GameStatus.PLAYER_TURN_COMPLETE);
           }
         }
       });
-
-      setAllCharacterList(tempAllCharacterList);
-      setSelectedCharacter(-1);
-      setRoomList(tempRoomList);
     }
   }
 
   useEffect(() => {
     // console.log(roomList);
   }, [roomList]);
+
+  function onKillButtonClick() {
+    let currentPlayer = playerList[playerSequence[0]];
+    let targetCharacter = undefined;
+    let tempAllCharacterList = [...allCharacterList];
+
+    let characterIndex = -1;
+    tempAllCharacterList.forEach((character, index) => {
+      if (character.id === selectedCharacter) {
+        // If current player and targeted character are in the same room
+        if (character.roomId === currentPlayer.roomId) {
+          characterIndex = index;
+
+          if (character.isPlayer) {
+            let playerIndex = character.playerId;
+            let tempPlayerSequence = [...playerSequence];
+            let sequenceIndex = undefined;
+
+            // Remove targeted player from player sequence
+            tempPlayerSequence.forEach((player, index) => {
+              if (player === playerIndex) {
+                sequenceIndex = index;
+              }
+            });
+
+            tempPlayerSequence.splice(sequenceIndex, 1);
+          }
+        } else {
+          // Show invalid move notification
+        }
+      }
+    });
+
+    // Remove targeted character from all character list
+    tempAllCharacterList.splice(characterIndex, 1);
+
+    setGameStatus(GameStatus.PLAYER_TURN_COMPLETE);
+    setSelectedCharacter(-1);
+    setAllCharacterList(tempAllCharacterList);
+  }
 
   return (
     <div className="h-full w-full flex justify-center items-center bg-gray-200">
@@ -334,9 +399,20 @@ function Game({ props }) {
         ))}
       </div>
 
+      {/* Kill Button Section */}
+      {diceRollColor === "BLACK" && selectedCharacter !== -1 ? (
+        <button
+          className="w-[20%] absolute bottom-5 rounded-lg bg-red-800 text-white text-center py-2 px-5 flex justify-center items-center"
+          onClick={onKillButtonClick}>
+          Kill
+        </button>
+      ) : (
+        <></>
+      )}
+
       {
         // Player Card Reveal Section
-        gameStatus === "PLAYER_CARD_REVEAL" ? (
+        gameStatus === GameStatus.PLAYER_CARD_REVEAL ? (
           <div className="h-full w-full absolute top-0 left-0">
             <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
             <div
@@ -359,31 +435,44 @@ function Game({ props }) {
               </span>
             </div>
           </div>
-        ) : // Player Turn Section
-        gameStatus === "START" ? (
+        ) : gameStatus === GameStatus.SETUP || gameStatus === GameStatus.PLAYER_TURN ? (
+          <></>
+        ) : (
+          // Player Turn Section
           <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
             <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
             <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20]">
-              GAME START
+              {gameStatus === "START"
+                ? "GAME START"
+                : gameStatus === "PLAYER_TURN_START"
+                ? "PLAYER " + (playerSequence[0] + 1) + "'S TURN"
+                : gameStatus === "PLAYER_TURN_DICE_ROLL"
+                ? "DICE ROLL: " + diceRollColor
+                : ""}
             </div>
           </div>
-        ) : gameStatus === "PLAYER_TURN_START" ? (
-          <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
-            <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-            <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20] text-center">
-              {"PLAYER " + (playerSequence[0] + 1) + "'S TURN"}
-            </div>
-          </div>
-        ) : gameStatus === "PLAYER_TURN_DICE_ROLL" ? (
-          <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
-            <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-            <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20] text-center">
-              {"DICE ROLL: " + diceRollColor}
-            </div>
-          </div>
-        ) : (
-          <></>
         )
+        // gameStatus === "START" ? (
+        //   <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
+        //     <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
+        //     <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20]">
+        //       GAME START
+        //     </div>
+        //   </div>
+        // ) : gameStatus === "PLAYER_TURN_START" ? (
+        //   <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
+        //     <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
+        //     <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20] text-center">
+        //       {"PLAYER " + (playerSequence[0] + 1) + "'S TURN"}
+        //     </div>
+        //   </div>
+        // ) : gameStatus === "PLAYER_TURN_DICE_ROLL" ? (
+        //   <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
+        //     <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
+        //     <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20] text-center">
+        //       {"DICE ROLL: " + diceRollColor}
+        //     </div>
+        //   </div>
       }
     </div>
   );
