@@ -3,11 +3,12 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import reportWebVitals from './reportWebVitals';
 import CostumePartyDetective from './costumePartyDetective';
+import Lobby from './lobby.js';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
     <React.StrictMode>
-      <CostumePartyDetective/>
+      <Lobby/>
     </React.StrictMode>
 );
 
