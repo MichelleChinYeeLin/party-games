@@ -71,6 +71,11 @@ span.card-description {
   font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
+.App {
+  height: 100%;
+  width: 100%;
+}
+
 .modal-backdrop {
   height: 100%;
   width: 100%;
