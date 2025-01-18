@@ -1,8 +1,9 @@
 import "./index.css";
 import React, { useEffect } from "react";
 import { useState } from "react";
-import startSound from "./assets/beep-start.mp3";
-import endSound from "./assets/beep-end.mp3";
+//import startSound from "../public/assets/beep-start.mp3";
+//import endSound from "../public/assets/beep-end.mp3";
+// import NotificationPanel from "./components/notificationPanel.js"
 
 const GameStatus = {
   SETUP: "SETUP",
@@ -42,11 +43,37 @@ const CostumePartyDetective = () => {
     data => {console.log(data)}
   )
 
+  const [socket, setSocket] = useState(null);
+  const [message, setMessage] = useState([]);
   const [isSetup, setIsSetup] = useState(true);
   const maxPlayerNum = 8;
   const maxPlayerList = [];
   const [selectedPlayerNum, setSelectedPlayerNum] = useState(2);
   const gameProps = { playerNum: selectedPlayerNum };
+
+  useEffect(() => {
+    // Connect to the Socket.IO server
+    // const newSocket = io("http://localhost:5000"); // TODO: Replace with server URL
+    // setSocket(newSocket);
+
+    // Clean up when component unmounts
+    // return () => newSocket.close();
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for "message" events from the server
+    socket.on("message", (message) => {
+      setMessage((prev) => [...prev, message]);
+    });
+  }, [socket]);
+
+  const joinRoom = () => {
+    if (socket) {
+      socket.emit("joinRoom", "room1"); // Emit a joinRoom event
+    }
+  }
 
   for (let i = 2; i <= maxPlayerNum; i++) {
     maxPlayerList.push(i);
@@ -167,24 +194,24 @@ function Game({ props }) {
 
   useEffect(() => {
     if (gameStatus === GameStatus.PLAYER_CARD_REVEAL) {
-      function playStartSound() {
-        new Audio(startSound).play();
-      }
+      // function playStartSound() {
+      //   new Audio(startSound).play();
+      // }
 
-      function playEndSound() {
-        new Audio(endSound).play();
-      }
+      // function playEndSound() {
+      //   new Audio(endSound).play();
+      // }
 
       async function revealWait() {
         for (const player of playerList) {
           setCurrentPlayerCardReveal(player);
           await sleep(2000);
           setIsPlayerCardRevealed(true);
-          playStartSound();
+          //playStartSound();
           await sleep(3000);
           setIsPlayerCardRevealed(false);
           await sleep(1000);
-          playEndSound();
+          //playEndSound();
           // TODO: "Ready Player (number)"" is briefly shown after the card is already shown, change it so that it doesn't display --- CT's Task
         }
 

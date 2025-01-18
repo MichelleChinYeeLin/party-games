@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../index.css";
 
-const Lobby = () => {
+const Lobby = ({ socket }) => {
   const gameInformationList = [
     {
       name: "Costume Party Detective",
@@ -13,6 +13,34 @@ const Lobby = () => {
 
   const [isShowingJoinDetails, setIsShowingJoinDetails] = useState(false);
   const [roomCode, setRoomCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Socket event listeners
+  useEffect(() => {
+    socket.on("message", (data) => {
+      if (data.eventName === "join-room") {
+        setIsLoading(false)
+        if (data.status === 1) {
+          // TODO Redirect to room lobby page
+          console.log(data);
+        }
+        else {
+          console.log("Error. Room not found");
+          // TODO Add notification message for error
+        }
+      }
+      else if (data.eventName === "create-room") {
+        setIsLoading(false);
+        if (data.status === 1) {
+          // TODO Redirect to room lobby page
+          console.log(data);
+        }
+        else {
+          console.log("Error. Room could not be created. Please try again later.");
+        }
+      }
+    });
+  }, []);
 
   function ToggleDetailsContainer(event) {
     const containerType = event.target.getAttribute("data-buttontype");
@@ -24,7 +52,17 @@ const Lobby = () => {
     }
   }
 
-  function CheckLobbyRoomCode(event) {
+  function ClickBtnCreateRoom() {
+    setIsLoading(true);
+    socket.emit("create-room");
+  }
+
+  function ClickBtnJoinRoom() {
+    setIsLoading(true);
+    socket.emit("join-room", {roomCode: roomCode});
+  }
+
+  function InputLobbyRoomCode(event) {
     const code = event.target.value;
     setRoomCode(code.toUpperCase());
   }
@@ -41,7 +79,7 @@ const Lobby = () => {
             className="w-[10rem] bg-green-700 py-3 px-5 mx-1 rounded-lg text-white text-lg"
             type="button"
             data-buttontype="create"
-            onClick={ToggleDetailsContainer}>
+            onClick={ClickBtnCreateRoom}>
             CREATE
           </button>
           <button
@@ -60,7 +98,9 @@ const Lobby = () => {
         </h2>
         <div id="gameInformationContainer" className="w-3/4 flex flex-wrap justify-center">
           {gameInformationList.map((gameInfo, index) => (
-            <div className="h-[25rem] w-[25rem] shadow items-center flex flex-col rounded-xl mx-5 my-3 bg-white" key={index}>
+            <div
+              className="h-[25rem] w-[25rem] shadow items-center flex flex-col rounded-xl mx-5 my-3 bg-white"
+              key={index}>
               <div className="h-[50%] w-full">
                 <img
                   src={gameInfo.imageUrl}
@@ -78,20 +118,46 @@ const Lobby = () => {
       </div>
 
       {/* Modal */}
-      {
-        isShowingJoinDetails ? <div className="h-screen w-screen absolute flex justify-center items-center">
+      {isShowingJoinDetails ? (
+        <div className="h-screen w-screen absolute flex justify-center items-center">
           <div className="modal-backdrop"></div>
           <div className="w-[40%] bg-[#F5F5F5] p-5 rounded-lg z-[200] relative flex flex-col">
-            <button className="absolute p-3 top-0 right-0" data-buttontype="close" onClick={ToggleDetailsContainer}>&#10006;</button>
+            <button
+              className="absolute p-3 top-0 right-0"
+              data-buttontype="close"
+              onClick={ToggleDetailsContainer}>
+              &#10006;
+            </button>
             <span className="w-full text-center font-bold text-3xl mt-5 mb-8">LOBBY DETAILS</span>
             <div className="h-fit-content w-full flex flex-col">
               <span className="font-bold text-lg px-3 py-2">ROOM CODE</span>
-              <input type="text" className="h-fit-content w-full bg-white py-2 px-3 border border-gray-400 rounded-lg focus:outline-none" placeholder="ENTER ROOM CODE" onChange={CheckLobbyRoomCode} value={roomCode}></input>
+              <input
+                type="text"
+                className="h-fit-content w-full bg-white py-2 px-3 border border-gray-400 rounded-lg focus:outline-none"
+                placeholder="ENTER ROOM CODE"
+                onChange={InputLobbyRoomCode}
+                value={roomCode}></input>
             </div>
-            <button className="w-full font-bold text-lg text-white px-5 py-2 bg-blue-600 mt-4 rounded-lg">JOIN</button>
+            <button
+              className="w-full font-bold text-lg text-white px-5 py-2 bg-blue-600 mt-4 rounded-lg"
+              onClick={ClickBtnJoinRoom}>
+              JOIN
+            </button>
           </div>
-        </div> : <></>
-      }
+        </div>
+      ) : (
+        <></>
+      )}
+
+      {/* Loading Screen */}
+      {isLoading ? (
+        <div className="loader-backdrop">
+          <div className="loader"></div>
+          <div className="modal-backdrop"></div>
+        </div>
+      ) : (
+        <></>
+      )}
     </div>
   );
 };
