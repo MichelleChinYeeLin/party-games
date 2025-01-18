@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
-const { Server } = require("socket.io");
+const Lobby = require("./modules/lobby.js");
 
 // Socket IO setup
 const app = express();
@@ -14,5 +14,10 @@ app.use(cors());
 app.get("/api", (req, res) => {
   res.json({ users: ["user1", "user2", "user3"] });
 });
+
+io.on("connection", function (socket) {
+  Lobby.ioSocketListener(io, socket);
+});
+
 // Start the server
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
