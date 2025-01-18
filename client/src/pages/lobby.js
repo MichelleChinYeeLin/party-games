@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../index.css";
+const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 
 const Lobby = ({ socket }) => {
   const gameInformationList = [
@@ -17,26 +18,26 @@ const Lobby = ({ socket }) => {
 
   // Socket event listeners
   useEffect(() => {
-    socket.on("message", (data) => {
-      if (data.eventName === "join-room") {
+    socket.on("message", (msg) => {
+      if (msg.data.event === "joinRoom") {
         setIsLoading(false)
-        if (data.status === 1) {
+        if (msg.status == IoMessageStatus.Success) {
           // TODO Redirect to room lobby page
-          console.log(data);
+          console.log(msg.message);
         }
         else {
-          console.log("Error. Room not found");
+          console.log(msg.message);
           // TODO Add notification message for error
         }
       }
-      else if (data.eventName === "create-room") {
+      else if (msg.data.event === "createRoom") {
         setIsLoading(false);
-        if (data.status === 1) {
+        if (msg.status == IoMessageStatus.Success) {
           // TODO Redirect to room lobby page
-          console.log(data);
+          console.log(msg.message);
         }
         else {
-          console.log("Error. Room could not be created. Please try again later.");
+          console.log(msg.message);
         }
       }
     });
@@ -54,12 +55,21 @@ const Lobby = ({ socket }) => {
 
   function ClickBtnCreateRoom() {
     setIsLoading(true);
-    socket.emit("create-room");
+    var msg = new IoMessage();
+    msg.message = "Requesting to create new lobby.";
+    msg.status = IoMessageStatus.Normal;
+    socket.emit("create-room", msg);
   }
 
   function ClickBtnJoinRoom() {
     setIsLoading(true);
-    socket.emit("join-room", {roomCode: roomCode});
+    var msg = new IoMessage();
+    msg.message = "Requesting to join a lobby.";
+    msg.status = IoMessageStatus.Normal;
+    msg.data = {
+      roomCode: roomCode
+    }
+    socket.emit("join-room", msg);
   }
 
   function InputLobbyRoomCode(event) {

@@ -1,36 +1,27 @@
+const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 const LobbyTree = require("../models/lobbyTree.js");
 
-const createRoom = (io, socket) => {
+const createRoom = (io, socket, _receivedMsg) => {
   var roomCode = LobbyTree.GenerateRoomCode();
-  var playerData = {
-    playerSocketId: socket.id,
-  };
-
-  LobbyTree.AddPlayerToLobby(roomCode, playerData);
+  var msg = LobbyTree.AddPlayerToLobby(roomCode, socket.id);
+  msg.data = {event: "createRoom"};
   socket.join(roomCode);
-
-  io.to(socket.id).emit("message", {
-    message: "Room created!",
-    status: 1,
-    eventName: "create-room",
-  });
+  io.to(socket.id).emit("message", msg);
 };
 
-const joinRoom = (io, socket, data) => {
+const joinRoom = (io, socket, receivedMsg) => {
   // If selected lobby exists
-  if (LobbyTree.IsExistingRoomCode(data.roomCode)) {
+  if (LobbyTree.IsExistingRoomCode(receivedMsg.data.roomCode)) {
+    var msg = LobbyTree.AddPlayerToLobby(receivedMsg.data.roomCode, socket.id);
+    msg.data = {event: "joinRoom"};
     socket.join(data.roomCode);
-    io.to(socket.id).emit("message", {
-      message: "Room joined!",
-      status: 1,
-      eventName: "join-room",
-    });
+    io.to(socket.id).emit("message", msg);
   } else {
-    io.to(socket.id).emit("message", {
-      message: "Room code not found!",
-      status: 0,
-      eventName: "join-room",
-    });
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Room code does not exist. Please try another room code or create a lobby.";
+    msg.data = {event: "joinRoom"};
+    io.to(socket.id).emit("message", msg);
   }
 };
 
@@ -39,13 +30,12 @@ const disconnectPlayer = (socket) => {
 }
 
 const ioSocketListener = (io, socket) => {
-  socket.on("create-room", () => {
-    createRoom(io, socket);
-    console.log(LobbyTree);
+  socket.on("create-room", (msg) => {
+    createRoom(io, socket, msg);
   });
 
-  socket.on("join-room", (data) => {
-    joinRoom(io, socket, data);
+  socket.on("join-room", (msg) => {
+    joinRoom(io, socket, msg);
   });
 
   // Handle disconnect

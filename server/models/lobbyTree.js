@@ -1,3 +1,5 @@
+const {IoMessageStatus, IoMessage} = require('./ioMessage.js');
+
 class PlayerNode {
   constructor(playerSocketId, playerNickname) {
     this.playerSocketId = playerSocketId;
@@ -60,11 +62,14 @@ class LobbyNode {
 class LobbyTree {
   static lobbyRoomList = [];
 
-  static AddPlayerToLobby(lobbyRoomCode, playerData) {
+  static AddPlayerToLobby(lobbyRoomCode, playerSocketId) {
     // Check if player socket id already exists
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
-        if (this.lobbyRoomList[i].IsExistingPlayerSocketId) {
-            return false;
+        if (this.lobbyRoomList[i].IsExistingPlayerSocketId(playerSocketId)) {
+            var msg = new IoMessage();
+            msg.status = IoMessageStatus.Fail;
+            msg.message = "Player Id already exists in a lobby. Please refresh the page and try again.";
+            return msg;
         }
     }
 
@@ -76,8 +81,11 @@ class LobbyTree {
     // Add player to selected lobby
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
       if (this.lobbyRoomList[i].lobbyRoomCode == lobbyRoomCode) {
-        this.lobbyRoomList[i].AddPlayer(playerData.playerSocketId);
-        return;
+        this.lobbyRoomList[i].AddPlayer(playerSocketId);
+        var msg = new IoMessage();
+        msg.status = IoMessageStatus.Success;
+        msg.message = "Player successfully added to lobby.";
+        return msg;
       }
     }
   }
@@ -98,18 +106,38 @@ class LobbyTree {
       }
     }
 
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Success;
+
     // If the last player has left, remove the lobby
     if (isLobbyEmpty) {
       this.lobbyRoomList = this.lobbyRoomList.filter((lobbyNode) => {
         return lobbyNode.playerList.length > 0;
       });
+      msg.message = "Player removed from lobby. Lobby removed.";
     }
+    else {
+      msg.message = "Player removed from lobby.";
+    }
+
+    return msg;
   }
 
-  static UpdatePlayerNickname(lobbyRoomCode, playerSocketId, playerNickname) {
+  static UpdatePlayerNickname(playerSocketId, playerNickname) {
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
-      if (this.lobbyRoomList[i].lobbyRoomCode == lobbyRoomCode) {
-        return this.lobbyRoomList[i].SetPlayerNickname(playerSocketId, playerNickname);
+      if (this.lobbyRoomList[i].IsExistingPlayerSocketId(playerSocketId)) {
+        if (this.lobbyRoomList[i].SetPlayerNickname(playerSocketId, playerNickname)) {
+          var msg = new IoMessage();
+          msg.status = IoMessageStatus.Success;
+          msg.message = "Player nickname updated.";
+          return msg;
+        }
+        else {
+          var msg = new IoMessage();
+          msg.status = IoMessage.Fail;
+          msg.message = "Player nickname already used by another player. Player nickname is not updated.";
+          return msg;
+        }
       }
     }
   }
