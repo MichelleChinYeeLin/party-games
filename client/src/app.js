@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { socket } from "./socket.js";
-import Lobby from "./pages/lobby.js";
+import Home from "./pages/home.js";
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -25,7 +25,7 @@ function App() {
 
   return (
     <div className="App">
-      <Lobby socket={socket} />
+      <Home socket={socket} />
     </div>
   );
 }
