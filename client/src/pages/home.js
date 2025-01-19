@@ -2,15 +2,7 @@ import React, { useState, useEffect } from "react";
 import "../index.css";
 const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 
-const Lobby = ({ socket }) => {
-  const gameInformationList = [
-    {
-      name: "Costume Party Detective",
-      description:
-        "You have been invited to a costume party. Because of the elaborate costumers, you do not know anyone's identity except your own. Be the last player standing.",
-      imageUrl: "/assets/images/costume-party-detective-background.png",
-    },
-  ];
+  const [gameInformationList, setGameInformationList] = useState([]);
 
   const [isShowingJoinDetails, setIsShowingJoinDetails] = useState(false);
   const [roomCode, setRoomCode] = useState("");
@@ -18,6 +10,13 @@ const Lobby = ({ socket }) => {
 
   // Socket event listeners
   useEffect(() => {
+    fetch("./data/gameInformation.json")
+      .then((response) => {
+        return response.json();
+      })
+      .then((data) => setGameInformationList(data))
+      .catch((error) => console.error(error));
+
     socket.on("message", (msg) => {
       if (msg.data.event === "joinRoom") {
         setIsLoading(false)
