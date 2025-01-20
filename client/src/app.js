@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { socket } from "./socket.js";
 import Home from "./pages/home.js";
+import Lobby from "./pages/lobby.js";
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -25,7 +27,13 @@ function App() {
 
   return (
     <div className="App">
-      <Home socket={socket} />
+      <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home socket={socket}/>} />
+        <Route path="/home" element={<Home socket={socket}/>} />
+        <Route path="/lobby/" element={<Lobby socket={socket}/>} />
+      </Routes>
+      </BrowserRouter>
     </div>
   );
 }

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../index.css";
-const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 
+const { IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
+
+const Home = ({ socket }) => {
   const [gameInformationList, setGameInformationList] = useState([]);
 
+  const navigate = useNavigate();
   const [isShowingJoinDetails, setIsShowingJoinDetails] = useState(false);
   const [roomCode, setRoomCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -19,23 +23,28 @@ const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 
     socket.on("message", (msg) => {
       if (msg.data.event === "joinRoom") {
-        setIsLoading(false)
+        setIsLoading(false);
         if (msg.status == IoMessageStatus.Success) {
-          // TODO Redirect to room lobby page
-          console.log(msg.message);
-        }
-        else {
+          socket.off("message");
+          navigate("/lobby", {
+            state: {
+              roomCode: msg.data.roomCode,
+            },
+          });
+        } else {
           console.log(msg.message);
           // TODO Add notification message for error
         }
-      }
-      else if (msg.data.event === "createRoom") {
+      } else if (msg.data.event === "createRoom") {
         setIsLoading(false);
         if (msg.status == IoMessageStatus.Success) {
-          // TODO Redirect to room lobby page
-          console.log(msg.message);
-        }
-        else {
+          socket.off("message");
+          navigate("/lobby", {
+            state: {
+              roomCode: msg.data.roomCode,
+            },
+          });
+        } else {
           console.log(msg.message);
         }
       }
@@ -66,8 +75,8 @@ const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
     msg.message = "Requesting to join a lobby.";
     msg.status = IoMessageStatus.Normal;
     msg.data = {
-      roomCode: roomCode
-    }
+      roomCode: roomCode,
+    };
     socket.emit("join-room", msg);
   }
 
@@ -171,4 +180,4 @@ const {IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
   );
 };
 
-export default Lobby;
+export default Home;

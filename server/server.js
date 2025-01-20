@@ -5,18 +5,15 @@ const Lobby = require("./modules/lobby.js");
 
 // Socket IO setup
 const app = express();
+app.use(express.json());
 const PORT = process.env.PORT || 5000;
 var server = http.createServer(app);
 const io = require("socket.io")(server, { cors: { origin: "*" } });
 app.use(cors());
 
-// API setup
-app.get("/api", (req, res) => {
-  res.json({ users: ["user1", "user2", "user3"] });
-});
-
 io.on("connection", function (socket) {
   Lobby.ioSocketListener(io, socket);
+  Lobby.apiHelper(app, io);
 });
 
 // Start the server

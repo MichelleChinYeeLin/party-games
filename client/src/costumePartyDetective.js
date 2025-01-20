@@ -53,7 +53,7 @@ const CostumePartyDetective = () => {
 
   useEffect(() => {
     // Connect to the Socket.IO server
-    // const newSocket = io("http://localhost:5000"); // TODO: Replace with server URL
+    // const newSocket = io("http://localhost:5000");
     // setSocket(newSocket);
 
     // Clean up when component unmounts
@@ -88,7 +88,6 @@ const CostumePartyDetective = () => {
     <div className="h-full w-full">
       {isSetup === true ? (
         <div className="h-full w-full flex justify-center items-center bg-gray-200">
-          {/* TODO: Insert background image here */}
           {/* <img
             className="h-full w-full absolute top-0 left-0 opacity-40"
             src={require("./assets/costume-party-detective-background.png")}></img> */}
@@ -212,7 +211,6 @@ function Game({ props }) {
           setIsPlayerCardRevealed(false);
           await sleep(1000);
           //playEndSound();
-          // TODO: "Ready Player (number)"" is briefly shown after the card is already shown, change it so that it doesn't display --- CT's Task
         }
 
         setGameStatus(GameStatus.START);
