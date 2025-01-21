@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Route, useLocation } from "react-router-dom";
+import { Route, useLocation, useNavigate } from "react-router-dom";
 import { IoMessageStatus, IoMessage } from "../models/ioMessage";
 
 const Lobby = ({ socket }) => {
+  var navigate = useNavigate();
   var lobbyData = useLocation();
-  const roomCode = lobbyData.state.roomCode;
+  const [roomCode, setRoomCode] = useState("");
   const [gameInformationList, setGameInformationList] = useState([]);
   const [selectedGame, setSelectedGame] = useState("");
   const [selectedGameIndex, setSelectedGameIndex] = useState(-1);
@@ -19,19 +20,25 @@ const Lobby = ({ socket }) => {
   const [isShowingLobbyLogs, setIsShowingLobbyLogs] = useState(true);
 
   useEffect(() => {
-    fetch("/data/gameInformation.json")
-      .then((response) => response.json())
-      .then((data) => setGameInformationList(data))
-      .catch((error) => console.error(error));
+    if (lobbyData.state == null || lobbyData.state == undefined) {
+      navigate("/");
+    } else {
+      setRoomCode(lobbyData.state.roomCode);
 
-    GetPlayerInformation();
-    GetPlayerList();
-    GetLobbyLogs();
-    GetLobbyGame();
+      fetch("/data/gameInformation.json")
+        .then((response) => response.json())
+        .then((data) => setGameInformationList(data))
+        .catch((error) => console.error(error));
 
-    socket.on("lobbyUpdateAlert", (_msg) => {
-      setIsUpdateRequired(true);
-    });
+      GetPlayerInformation();
+      GetPlayerList();
+      GetLobbyLogs();
+      GetLobbyGame();
+
+      socket.on("lobbyUpdateAlert", (_msg) => {
+        setIsUpdateRequired(true);
+      });
+    }
   }, []);
 
   useEffect(() => {
