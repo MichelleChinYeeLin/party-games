@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { socket } from "./socket.js";
 import Home from "./pages/home.js";
 import Lobby from "./pages/lobby.js";
+import CostumePartyDetective from "./pages/costumePartyDetective.js";
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
@@ -32,6 +33,7 @@ function App() {
         <Route path="/" element={<Home socket={socket}/>} />
         <Route path="/home" element={<Home socket={socket}/>} />
         <Route path="/lobby/" element={<Lobby socket={socket}/>} />
+        <Route path="/costume-party-detective/" element={<CostumePartyDetective socket={socket}/>} />
       </Routes>
       </BrowserRouter>
     </div>

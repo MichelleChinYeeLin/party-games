@@ -1,4 +1,4 @@
-import "./index.css";
+// import "./index.css";
 import React, { useEffect } from "react";
 import { useState } from "react";
 //import startSound from "../public/assets/beep-start.mp3";
@@ -36,86 +36,8 @@ class Room {
   }
 }
 
-const CostumePartyDetective = () => {
-  fetch("/api").then(
-    response => response.json()
-  ).then(
-    data => {console.log(data)}
-  )
-
-  const [socket, setSocket] = useState(null);
-  const [message, setMessage] = useState([]);
-  const [isSetup, setIsSetup] = useState(true);
-  const maxPlayerNum = 8;
-  const maxPlayerList = [];
-  const [selectedPlayerNum, setSelectedPlayerNum] = useState(2);
-  const gameProps = { playerNum: selectedPlayerNum };
-
-  useEffect(() => {
-    // Connect to the Socket.IO server
-    // const newSocket = io("http://localhost:5000");
-    // setSocket(newSocket);
-
-    // Clean up when component unmounts
-    // return () => newSocket.close();
-  }, []);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    // Listen for "message" events from the server
-    socket.on("message", (message) => {
-      setMessage((prev) => [...prev, message]);
-    });
-  }, [socket]);
-
-  const joinRoom = () => {
-    if (socket) {
-      socket.emit("joinRoom", "room1"); // Emit a joinRoom event
-    }
-  }
-
-  for (let i = 2; i <= maxPlayerNum; i++) {
-    maxPlayerList.push(i);
-  }
-
-  function onSelectedPlayerNumChange(event) {
-    let value = parseInt(event.target.value);
-    setSelectedPlayerNum(value);
-  }
-
-  return (
-    <div className="h-full w-full">
-      {isSetup === true ? (
-        <div className="h-full w-full flex justify-center items-center bg-gray-200">
-          {/* <img
-            className="h-full w-full absolute top-0 left-0 opacity-40"
-            src={require("./assets/costume-party-detective-background.png")}></img> */}
-          <div className="h-1/4 w-2/6 bg-white p-5 rounded flex flex-col items-center shadow rounded-xl absolute opacity-90">
-            <span className="text-lg font-bold p-2">Select Number of Players</span>
-            <select className="w-1/2 p-1" onChange={onSelectedPlayerNumChange}>
-              {maxPlayerList.map((num) => (
-                <option key={num} value={num}>
-                  {num}
-                </option>
-              ))}
-            </select>
-            <button
-              className="w-1/2 p-2 text-center absolute bottom-5 rounded bg-red-700 text-white"
-              onClick={() => setIsSetup(false)}>
-              Start Game
-            </button>
-          </div>
-        </div>
-      ) : (
-        <Game props={gameProps} />
-      )}
-    </div>
-  );
-};
-
-function Game({ props }) {
-  let playerNum = props.playerNum;
+const CostumePartyDetective = ({ socket }) => {
+  let playerNum = 2;
   const maxCharacters = 20;
   const [characterList, setCharacterList] = useState(
     Array.from({ length: maxCharacters }, (_value, index) => new Character(index))
