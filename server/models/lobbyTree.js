@@ -1,12 +1,6 @@
 const { IoMessageStatus, IoMessage } = require("./ioMessage.js");
 const GameList = require("./gameList.js");
-
-class PlayerNode {
-  constructor(playerSocketId, playerNickname) {
-    this.playerSocketId = playerSocketId;
-    this.playerNickname = playerNickname;
-  }
-}
+const { Player } = require("./player.js");
 
 class LobbyNode {
   constructor(lobbyRoomCode) {
@@ -76,7 +70,7 @@ class LobbyNode {
     if (this.playerList.length < 1) {
       this.hostSocketId = playerSocketId;
     }
-    this.playerList.push(new PlayerNode(playerSocketId, playerNickname));
+    this.playerList.push(new Player(playerSocketId, playerNickname));
     this.logs.push(playerNickname + " has joined the room!");
   }
 
