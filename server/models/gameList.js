@@ -20,6 +20,25 @@ class GameList {
     return msg;
   }
 
+  static GetGameUrl(selectedGame) {
+    for (var i = 0; i < this.gameList.length; i++) {
+      if (this.gameList[i].name == selectedGame) {
+        var msg = new IoMessage();
+        msg.status = IoMessageStatus.Success;
+        msg.message = "Game file url retrieved successfully.";
+        msg.data = {
+          url: this.gameList[i].url
+        };
+        return msg;
+      }
+    }
+
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Game not found.";
+    return msg;
+  }
+
   static ReadGameInfoJson() {
     var fs = require("fs"),
       json;

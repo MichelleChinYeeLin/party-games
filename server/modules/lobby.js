@@ -1,4 +1,5 @@
 const { IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
+const GameList = require("../models/gameList.js");
 const LobbyTree = require("../models/lobbyTree.js");
 
 LobbyTree.InitialiseGameList();
@@ -33,7 +34,7 @@ const sendUpdateAlert = (io, roomCode) => {
   var msg = new IoMessage();
   msg.status = IoMessageStatus.Normal;
   msg.message = "Lobby details have been updated";
-  io.to(roomCode).emit("lobbyUpdateAlert", msg);
+  io.to(roomCode).emit("lobby-update-alert", msg);
 };
 
 const disconnectPlayer = (io, socket) => {
@@ -43,6 +44,14 @@ const disconnectPlayer = (io, socket) => {
     sendUpdateAlert(io, lobbyRoomCode);
   }
 };
+
+const startGame = (io, roomCode) => {
+  var lobbyGameMsg = LobbyTree.GetLobbyGame(roomCode);
+  if (lobbyGameMsg.status == IoMessageStatus.Success) {
+    var gameUrlMsg = GameList.GetGameUrl(lobbyGameMsg.data.selectedGame);
+    io.to(roomCode).emit("start-game-alert", gameUrlMsg)
+  }
+}
 
 const ioSocketListener = (io, socket) => {
   socket.on("create-room", (msg) => {
@@ -56,6 +65,10 @@ const ioSocketListener = (io, socket) => {
   socket.on("update-player-nickname", (msg) => {
     updatePlayerNickname(io, socket, msg);
   });
+
+  socket.on("start-game", (msg) => {
+    startGame(io, msg.data.roomCode);
+  })
 
   // Handle disconnect
   socket.on("disconnect", () => {
@@ -110,7 +123,7 @@ const apiHelper = (app, io) => {
     if (msg.data != null) {
       sendUpdateAlert(io, receivedMsg.data.lobbyRoomCode);
     }
-  })
+  });
 };
 
 module.exports = {

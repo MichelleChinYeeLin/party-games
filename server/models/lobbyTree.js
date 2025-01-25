@@ -106,10 +106,11 @@ class LobbyNode {
 
   UpdatePlayerNickname(playerSocketId, playerNickname) {
     // Check if nickname is empty string or null
-    if (playerNickname === null || playerNickname == "") {
+    if (playerNickname == null || playerNickname == "") {
       var msg = new IoMessage();
       msg.status = IoMessage.Fail;
       msg.message = "Player nickname cannot be empty. Player nickname is not updated.";
+      msg.data = null;
       return msg;
     }
 
@@ -124,6 +125,7 @@ class LobbyNode {
       msg.status = IoMessage.Fail;
       msg.message =
         "Player nickname already used by another player. Player nickname is not updated.";
+      msg.data = null;
       return msg;
     }
 

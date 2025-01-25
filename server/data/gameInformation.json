@@ -2,6 +2,7 @@
     {
         "name": "Costume Party Detective",
         "minPlayers": 2,
-        "maxPlayers": 10
+        "maxPlayers": 10,
+        "url": "/costume-party-detective/"
     }
 ]

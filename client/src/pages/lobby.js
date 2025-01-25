@@ -24,29 +24,39 @@ const Lobby = ({ socket }) => {
       navigate("/");
     } else {
       setRoomCode(lobbyData.state.roomCode);
-
       fetch("/data/gameInformation.json")
         .then((response) => response.json())
         .then((data) => setGameInformationList(data))
         .catch((error) => console.error(error));
+    }
+  }, []);
 
+  useEffect(() => {
+    if (roomCode != "") {
       GetPlayerInformation();
       GetPlayerList();
       GetLobbyLogs();
       GetLobbyGame();
 
-      socket.on("lobbyUpdateAlert", (_msg) => {
+      socket.on("lobby-update-alert", (_msg) => {
         setIsUpdateRequired(true);
       });
+
+      socket.on("start-game-alert", (msg) => {
+        var url = msg.data.url;
+        navigate(url);
+      })
     }
-  }, []);
+  }, [roomCode, gameInformationList]);
 
   useEffect(() => {
-    if (isUpdateRequired) {
-      GetPlayerList();
-      GetLobbyLogs();
-      GetLobbyGame();
-      setIsUpdateRequired(false);
+    if (roomCode != "") {
+      if (isUpdateRequired) {
+        GetPlayerList();
+        GetLobbyLogs();
+        GetLobbyGame();
+        setIsUpdateRequired(false);
+      }
     }
   }, [isUpdateRequired]);
 
@@ -66,9 +76,7 @@ const Lobby = ({ socket }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(msg),
-      })
-        .then((response) => console.log(response))
-        .catch((error) => console.error(error));
+      }).catch((error) => console.error(error));
 
       setIsPlayerAction(false);
     }, 3000);
@@ -92,9 +100,7 @@ const Lobby = ({ socket }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(msg),
-      })
-        .then((response) => console.log(response))
-        .catch((error) => console.error(error));
+      }).catch((error) => console.error(error));
 
       setIsPlayerAction(false);
     }
@@ -167,6 +173,17 @@ const Lobby = ({ socket }) => {
     setIsPlayerAction(true);
   }
 
+  function ClickStartGameButton() {
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Normal;
+    msg.message = "Requesting to start game.";
+    msg.data = {
+      roomCode: roomCode,
+    };
+
+    socket.emit("start-game", msg);
+  }
+
   return (
     <div className="h-full w-full flex">
       <div
@@ -201,17 +218,13 @@ const Lobby = ({ socket }) => {
                 <select
                   className="max-h-[25%] w-full border border-gray-300 px-5 py-2"
                   onChange={SelectGame}
-                  defaultValue={-1}
+                  value={selectedGameIndex}
                   disabled={!isHost}>
-                  <option key={-1} value={-1} data-name={-1} selected={selectedGameIndex == -1}>
+                  <option key={-1} value={-1} data-name={-1}>
                     Select Game
                   </option>
                   {gameInformationList.map((gameInfo, index) => (
-                    <option
-                      key={index}
-                      value={index}
-                      data-name={gameInfo.name}
-                      selected={selectedGameIndex == index}>
+                    <option key={index} value={index} data-name={gameInfo.name}>
                       {gameInfo.name}
                     </option>
                   ))}
@@ -249,8 +262,23 @@ const Lobby = ({ socket }) => {
           </div>
         </div>
       </div>
+      {isHost ? (
+        <button
+          className={`h-[10%] w-[20%] absolute fixed right-0 bottom-0 ${
+            selectedGameIndex != -1 ? "bg-green-700 enabled hover:bg-green-800" : "bg-gray-300"
+          } text-white text-2xl`}
+          disabled={selectedGameIndex == -1}
+          onClick={ClickStartGameButton}>
+          START GAME
+        </button>
+      ) : (
+        <></>
+      )}
       {isShowingLobbyLogs ? (
-        <div className="h-full w-[20%] bg-white flex flex-col border border-l-2 border-gray-300">
+        <div
+          className={`${
+            isHost ? "h-[90%]" : "h-full"
+          } w-[20%] bg-white flex flex-col border border-l-2 border-gray-300`}>
           <div className="flex justify-between px-4 py-2 shadow z-10">
             <span className="font-bold text-xl">ACTIVITY</span>
             <button type="button" className="self-center" onClick={ToggleActivityContainer}>
