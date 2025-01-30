@@ -174,6 +174,7 @@ class LobbyNode {
 
 class LobbyTree {
   static lobbyRoomList = [];
+  static lobbyGameMap = new Map();
 
   static InitialiseGameList() {
     GameList.ReadGameInfoJson();
@@ -274,6 +275,14 @@ class LobbyTree {
     }
   }
 
+  static AddGameDataToLobby(lobbyRoomCode, gameData) {
+    this.lobbyGameMap.set(lobbyRoomCode, gameData);
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Success;
+    msg.message = "Game data added successfully.";
+    return msg;
+  }
+
   static RemovePlayerFromLobby(playerSocketId) {
     var isLobbyEmpty = false;
     var isPlayerFound = false;
@@ -288,6 +297,7 @@ class LobbyTree {
         // If lobby does not contain other players
         if (this.lobbyRoomList[i].IsEmptyPlayerList()) {
           isLobbyEmpty = true;
+this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
           msg.message = " Lobby removed due to inactivity.";
         }
 
