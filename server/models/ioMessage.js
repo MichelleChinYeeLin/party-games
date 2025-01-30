@@ -14,9 +14,9 @@ const IoMessageStatus = CreateIoMessageEnum();
 
 class IoMessage {
     constructor() {
-        this.status = null;
-        this.data = null;
-        this.message = null;
+        this.status = IoMessageStatus.Normal;
+        this.data = {};
+        this.message = "";
     }
 }
 
