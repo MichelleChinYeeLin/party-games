@@ -284,7 +284,6 @@ class LobbyTree {
   }
 
   static RemovePlayerFromLobby(playerSocketId) {
-    var isLobbyEmpty = false;
     var isPlayerFound = false;
 
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
@@ -294,9 +293,8 @@ class LobbyTree {
           isPlayerFound = true;
         }
 
-        // If lobby does not contain other players
+        // If lobby does not contain other players, remove lobby and game var
         if (this.lobbyRoomList[i].IsEmptyPlayerList()) {
-          isLobbyEmpty = true;
 this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
           msg.message = " Lobby removed due to inactivity.";
         }
