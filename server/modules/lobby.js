@@ -1,6 +1,7 @@
 const { IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 const GameList = require("../models/gameList.js");
 const LobbyTree = require("../models/lobbyTree.js");
+const { CostumePartyDetective } = require("../models/costumePartyDetective.js");
 
 LobbyTree.InitialiseGameList();
 
@@ -49,7 +50,26 @@ const startGame = (io, roomCode) => {
   var lobbyGameMsg = LobbyTree.GetLobbyGame(roomCode);
   if (lobbyGameMsg.status == IoMessageStatus.Success) {
     var gameUrlMsg = GameList.GetGameUrl(lobbyGameMsg.data.selectedGame);
-    io.to(roomCode).emit("start-game-alert", gameUrlMsg)
+    var playerListMsg = LobbyTree.GetLobbyPlayerList(roomCode);
+    var lobbyGame = lobbyGameMsg.data.selectedGame;
+    var playerList = playerListMsg.data;
+    var gameData;
+
+    // Determine which type of game data to initialise
+    switch (lobbyGame) {
+      case "Costume Party Detective":
+        gameData = new CostumePartyDetective(playerList);
+        break;
+      default:
+        gameData = null;
+    }
+
+    // If selected game is found, redirect to the game's url
+    if (gameData != null) {
+      var gameDataMsg = LobbyTree.AddGameDataToLobby(roomCode, gameData);
+      gameDataMsg.data.url = gameUrlMsg.data.url;
+      io.to(roomCode).emit("start-game-alert", gameDataMsg);
+    }
   }
 }
 
