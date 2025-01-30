@@ -3,6 +3,15 @@
         "name": "Costume Party Detective",
         "minPlayers": 2,
         "maxPlayers": 10,
-        "url": "/costume-party-detective/"
+        "url": "/costume-party-detective/",
+        "details": {
+            "roomList": ["Red", "Green", "Blue", "Mid", "Yellow"],
+            "characterList": [
+                "Witch", "Princess", "Tank", "Archer", "Assassin", "Bard", "Martial Artist",
+                "Priest", "Mage", "Knight", "Zombie", "Skeleton", "Mummy", "Vampire",
+                "Werewolf", "Orc", "Abominal Snowman", "Demon", "Goblin", "Pirate"
+            ],
+            "diceRolls": ["Red", "Green", "Blue", "Yellow", "Black", "Black"]
+        }
     }
 ]
