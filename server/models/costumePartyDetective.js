@@ -34,8 +34,8 @@ class CostumePartyDetective {
     this.playerList = playerList;
     this.characterList = [];
     this.roomList = [];
-    characterNameList = gameInfoMsg.data.details.characterList;
-    roomNameList = gameInfoMsg.data.details.roomList;
+    var characterNameList = gameInfoMsg.data.details.characterList;
+    var roomNameList = gameInfoMsg.data.details.roomList;
 
     // Randomise player sequence
     this.playerSequence = [];
@@ -50,7 +50,7 @@ class CostumePartyDetective {
     }
 
     // Initialise characters
-    this.characterNameList.forEach((character) => {
+    characterNameList.forEach((character) => {
       var newCharacter = new Character(character);
       this.characterList.push(newCharacter);
     });
@@ -68,8 +68,8 @@ class CostumePartyDetective {
 
     // Randomise characters' room
     var tempCharacterList = this.characterList;
-    var roomCharacterNum = tempCharacterList.length / this.roomNameList.length;
-    this.roomNameList.forEach((room) => {
+    var roomCharacterNum = tempCharacterList.length / roomNameList.length;
+    roomNameList.forEach((room) => {
       var connectingRooms = [];
       switch (room) {
         case "Red":

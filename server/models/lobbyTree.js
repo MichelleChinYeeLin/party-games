@@ -284,13 +284,10 @@ class LobbyTree {
   }
 
   static RemovePlayerFromLobby(playerSocketId) {
-    var isPlayerFound = false;
-
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
       for (var j = 0; j < this.lobbyRoomList[i].playerList.length; j++) {
         if (this.lobbyRoomList[i].IsExistingPlayerSocketId(playerSocketId)) {
           var msg = this.lobbyRoomList[i].RemovePlayer(playerSocketId);
-          isPlayerFound = true;
         }
 
         // If lobby does not contain other players, remove lobby and game var
@@ -308,23 +305,8 @@ this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
     }
 
     var msg = new IoMessage();
-    if (isPlayerFound) {
-      msg.status = IoMessageStatus.Success;
-
-      // If the last player has left, remove the lobby
-      if (isLobbyEmpty) {
-        this.lobbyRoomList = this.lobbyRoomList.filter((lobbyNode) => {
-          return lobbyNode.playerList.length > 0;
-        });
-        msg.message = "Player removed from lobby. Lobby removed.";
-      } else {
-        msg.message = "Player removed from lobby.";
-      }
-    } else {
       msg.status = IoMessageStatus.Fail;
       msg.message = "Player not found.";
-    }
-
     return msg;
   }
 
