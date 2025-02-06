@@ -1,428 +1,86 @@
-// import "./index.css";
 import React, { useEffect } from "react";
 import { useState } from "react";
-//import startSound from "../public/assets/beep-start.mp3";
-//import endSound from "../public/assets/beep-end.mp3";
-// import NotificationPanel from "./components/notificationPanel.js"
-
-const GameStatus = {
-  SETUP: "SETUP",
-  PLAYER_CARD_REVEAL: "PLAYER_CARD_REVEAL",
-  START: "START",
-  PLAYER_TURN_START: "PLAYER_TURN_START",
-  PLAYER_TURN_DICE_ROLL: "PLAYER_TURN_DICE_ROLL",
-  PLAYER_TURN: "PLAYER_TURN",
-  PLAYER_TURN_COMPLETE: "PLAYER_TURN_COMPLETE",
-  PLAYER_TURN_DICE_ROLL: "PLAYER_TURN_DICE_ROLL",
-};
-
-class Character {
-  constructor(id) {
-    this.id = id;
-    this.isPlayer = false;
-    this.playerId = -1;
-    this.isAlive = true;
-    this.currentRoomId = -1;
-    this.currentRoomColor = "";
-  }
-}
-
-class Room {
-  constructor(id) {
-    this.id = id;
-    this.color = "";
-    this.capacity = 0;
-    this.characterList = [];
-  }
-}
+import { IoMessage, IoMessageStatus } from "../models/ioMessage.js";
+import { DiceIcon, RoleIcon, ProfileIcon } from "../assets/assetLibrary.jsx";
 
 const CostumePartyDetective = ({ socket }) => {
-  let playerNum = 2;
-  const maxCharacters = 20;
-  const [characterList, setCharacterList] = useState(
-    Array.from({ length: maxCharacters }, (_value, index) => new Character(index))
-  );
-  const [playerList, setPlayerList] = useState([]);
-  const [allCharacterList, setAllCharacterList] = useState([]);
-  const roomColorList = ["RED", "GREEN", "BLUE", "MID", "YELLOW"];
+  const [playerCharacter, setPlayerCharacter] = useState("");
   const [roomList, setRoomList] = useState([]);
-  const [gameStatus, setGameStatus] = useState(GameStatus.SETUP);
-  const [currentPlayerCardReveal, setCurrentPlayerCardReveal] = useState(undefined);
-  const [isPlayerCardRevealed, setIsPlayerCardRevealed] = useState(false);
-  const [playerSequence, setPlayerSequence] = useState(
-    Array.from({ length: playerNum }, (_value, index) => index)
-  );
-  const [diceRollColor, setDiceRollColor] = useState("");
-  const [selectedCharacter, setSelectedCharacter] = useState(-1);
-
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const [isShowingPlayerCharacter, setIsShowingPlayerCharacter] = useState(true);
+  const [diceRollResult, setDiceRollResult] = useState("");
 
   useEffect(() => {
-    if (playerList.length < playerNum) {
-      // Setting players' characters
-      let tempPlayerList = [];
-      let tempCharacterList = [...characterList];
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Normal;
+    msg.message = "Requesting to initialise game.";
 
-      while (tempPlayerList.length < playerNum) {
-        let rng = Math.floor(Math.random() * tempCharacterList.length);
-        let selectedCharacter = { ...tempCharacterList[rng] };
-        selectedCharacter.isPlayer = true;
-        selectedCharacter.playerId = tempPlayerList.length;
-        tempPlayerList.push(selectedCharacter);
-        tempCharacterList.splice(rng, 1);
-      }
-
-      setPlayerList(tempPlayerList);
-      setCharacterList(tempCharacterList);
-      setAllCharacterList([...tempPlayerList, ...tempCharacterList]);
-    }
-  }, [playerNum]);
-
-  useEffect(() => {
-    // Initialize rooms when all characters are set
-    if (gameStatus === GameStatus.SETUP && allCharacterList.length > 0) {
-      let availableRoomList = Array.from(roomColorList, (_value, index) => new Room(index));
-      let tempRoomList = [];
-      let tempCharacterList = [...allCharacterList];
-      let roomMaxCapacity = Math.ceil(maxCharacters / roomColorList.length);
-
-      // Assign all characters to rooms
-      tempCharacterList.forEach((character) => {
-        if (character.currentRoomId == -1) {
-          let rngRoomIndex = Math.floor(Math.random() * availableRoomList.length);
-          character.currentRoomId = availableRoomList[rngRoomIndex].id;
-          availableRoomList[rngRoomIndex].capacity++;
-          availableRoomList[rngRoomIndex].characterList.push(character);
-
-          if (availableRoomList[rngRoomIndex].capacity >= roomMaxCapacity) {
-            availableRoomList[rngRoomIndex].color = roomColorList[tempRoomList.length];
-            tempRoomList.push(availableRoomList[rngRoomIndex]);
-            availableRoomList.splice(rngRoomIndex, 1);
-          }
-        }
-      });
-
-      setRoomList(tempRoomList);
-
-      async function pause() {
-        await sleep(2000);
-        setGameStatus(GameStatus.PLAYER_CARD_REVEAL);
-        setCurrentPlayerCardReveal(playerList[0]);
-      }
-      pause();
-    }
-  }, [allCharacterList]);
-
-  useEffect(() => {
-    if (gameStatus === GameStatus.PLAYER_CARD_REVEAL) {
-      // function playStartSound() {
-      //   new Audio(startSound).play();
-      // }
-
-      // function playEndSound() {
-      //   new Audio(endSound).play();
-      // }
-
-      async function revealWait() {
-        for (const player of playerList) {
-          setCurrentPlayerCardReveal(player);
-          await sleep(2000);
-          setIsPlayerCardRevealed(true);
-          //playStartSound();
-          await sleep(3000);
-          setIsPlayerCardRevealed(false);
-          await sleep(1000);
-          //playEndSound();
-        }
-
-        setGameStatus(GameStatus.START);
-      }
-
-      revealWait();
-    } else if (gameStatus === GameStatus.START) {
-      async function showGameStartCard() {
-        await sleep(2000);
-        setGameStatus(GameStatus.PLAYER_TURN_START);
-      }
-      showGameStartCard();
-    } else if (gameStatus === GameStatus.PLAYER_TURN_START) {
-      async function showPlayerTurnCard() {
-        await sleep(2000);
-        colorDiceRoll();
-        setGameStatus(GameStatus.PLAYER_TURN_DICE_ROLL);
-      }
-      showPlayerTurnCard();
-    } else if (gameStatus === GameStatus.PLAYER_TURN_DICE_ROLL) {
-      async function showDiceRollCard() {
-        await sleep(3000);
-        setGameStatus(GameStatus.PLAYER_TURN);
-      }
-      showDiceRollCard();
-    } else if (gameStatus === GameStatus.PLAYER_TURN_COMPLETE) {
-      let tempPlayerSequence = [...playerSequence];
-      let playerIndex = tempPlayerSequence[0];
-      console.log(playerIndex);
-      tempPlayerSequence.splice(0, 1);
-      tempPlayerSequence.push(playerIndex);
-      setPlayerSequence(tempPlayerSequence);
-      setGameStatus(GameStatus.PLAYER_TURN_START);
-    }
-  }, [gameStatus]);
-
-  useEffect(() => {
-    console.log(playerSequence);
-  }, [playerSequence]);
-
-  function colorDiceRoll() {
-    let diceRollColors = ["RED", "GREEN", "BLUE", "YELLOW", "BLACK", "BLACK"];
-    let diceRoll = Math.floor(Math.random() * 6);
-    setDiceRollColor(diceRollColors[diceRoll]);
-  }
-
-  function onCharacterSelected(event) {
-    if (gameStatus !== GameStatus.PLAYER_TURN) {
-      return;
-    }
-
-    let newSelectedCharacter = event.target.getAttribute("character-id");
-
-    if (selectedCharacter === newSelectedCharacter) {
-      setSelectedCharacter(-1);
-    } else {
-      setSelectedCharacter(newSelectedCharacter);
-    }
-  }
-
-  useEffect(() => {
-    // console.log(selectedCharacter);
-  }, [selectedCharacter]);
-
-  function onRoomSelected(event) {
-    if (
-      gameStatus === GameStatus.PLAYER_TURN &&
-      selectedCharacter !== -1 &&
-      diceRollColor !== "BLACK"
-    ) {
-      let selectedRoomId = event.currentTarget.getAttribute("room-id");
-
-      // Validate if character can be moved to selected room
-      let tempAllCharacterList = [...allCharacterList];
-      let tempRoomList = [...roomList];
-      let selectedRoom = undefined;
-
-      tempRoomList.forEach((room) => {
-        if (room.id == selectedRoomId) {
-          selectedRoom = room;
-        }
-      });
-
-      tempAllCharacterList.forEach((character) => {
-        if (character.id == selectedCharacter) {
-          let currentRoom = character.currentRoomId;
-          let currentRoomColor = "";
-
-          tempRoomList.forEach((room) => {
-            if (room.id === currentRoom) {
-              currentRoomColor = room.color;
-            }
-          });
-
-          // If invalid move
-          if (
-            (currentRoomColor === "RED" && selectedRoom.color === "YELLOW") ||
-            (currentRoomColor === "YELLOW" && selectedRoom.color === "RED") ||
-            (currentRoomColor === "BLUE" && selectedRoom.color === "GREEN") ||
-            (currentRoomColor === "GREEN" && selectedRoom.color === "BLUE") ||
-            (currentRoomColor !== diceRollColor && selectedRoom.color !== diceRollColor) ||
-            currentRoomColor === selectedRoom.color
-          ) {
-            console.log("invalid move");
-          } else {
-            tempRoomList.forEach((room) => {
-              if (room.id === selectedRoom.id) {
-                room.characterList.push(character);
-                room.capacity++;
-              } else if (room.id === character.currentRoomId) {
-                let characterIndex = 0;
-                room.characterList.forEach((roomCharacter, index) => {
-                  if (roomCharacter.id === character.id) {
-                    characterIndex = index;
-                  }
-                });
-
-                room.characterList.splice(characterIndex, 1);
-                room.capacity--;
-              }
-            });
-            character.currentRoomId = selectedRoom.id;
-            setAllCharacterList(tempAllCharacterList);
-            setSelectedCharacter(-1);
-            setRoomList(tempRoomList);
-            setGameStatus(GameStatus.PLAYER_TURN_COMPLETE);
-          }
-        }
-      });
-    }
-  }
-
-  useEffect(() => {
-    // console.log(roomList);
-  }, [roomList]);
-
-  function onKillButtonClick() {
-    let currentPlayer = playerList[playerSequence[0]];
-    let targetCharacter = undefined;
-    let tempAllCharacterList = [...allCharacterList];
-
-    let characterIndex = -1;
-    tempAllCharacterList.forEach((character, index) => {
-      if (character.id === selectedCharacter) {
-        // If current player and targeted character are in the same room
-        if (character.roomId === currentPlayer.roomId) {
-          characterIndex = index;
-
-          if (character.isPlayer) {
-            let playerIndex = character.playerId;
-            let tempPlayerSequence = [...playerSequence];
-            let sequenceIndex = undefined;
-
-            // Remove targeted player from player sequence
-            tempPlayerSequence.forEach((player, index) => {
-              if (player === playerIndex) {
-                sequenceIndex = index;
-              }
-            });
-
-            tempPlayerSequence.splice(sequenceIndex, 1);
-          }
-        } else {
-          // Show invalid move notification
-        }
-      }
+    socket.emit("initialise-game-alert", msg);
+    socket.on("initialise-game", (msg) => {
+      setPlayerCharacter(msg.data.character.name);
+      setRoomList(msg.data.roomList);
     });
 
-    // Remove targeted character from all character list
-    tempAllCharacterList.splice(characterIndex, 1);
+    socket.on("player-turn", (msg) => {});
+  }, []);
 
-    setGameStatus(GameStatus.PLAYER_TURN_COMPLETE);
-    setSelectedCharacter(-1);
-    setAllCharacterList(tempAllCharacterList);
+  function ClickShowingPlayerCharacterButton () {
+    setIsShowingPlayerCharacter(!isShowingPlayerCharacter);
   }
 
   return (
-    <div className="h-full w-full flex justify-center items-center bg-gray-200">
-      <div className="h-[80%] w-[80%] grid grid-cols-3 gap-0">
+    <div className="h-full w-full flex justify-center items-center">
+      <div className="h-[5rem] w-fit-content absolute fixed left-10 top-5 flex items-center">
+        <div className="h-[3rem]">
+          <DiceIcon />
+        </div>
+      </div>
+      <button className="h-[3rem] absolute fixed right-10 top-5 rounded text-white" onClick={ClickShowingPlayerCharacterButton}>
+        <RoleIcon />
+      </button>
+      {isShowingPlayerCharacter ? (
+        <div className="h-[25%] w-[10%] absolute fixed right-5 top-20 bg-white text-black rounded-lg border border-black px-3 py-2 flex flex-col items-center justify-center shadow">
+          <div className="h-[50%]">
+            <ProfileIcon />
+          </div>
+          <span className="text-black text-xl mt-3 text-center">{playerCharacter}</span>
+        </div>
+      ) : (
+        <></>
+      )}
+      <div className="h-[60%] w-[60%] grid grid-cols-3 gap-0">
         {roomList.map((room, index) => (
           <div
             key={index}
-            room-color={room.color}
-            room-id={room.id}
+            room-name={room.name}
             className={`flex flex-wrap justify-center items-center content-center border border-black ${
-              room.color === "RED"
+              room.name === "Red"
                 ? "col-span-2 bg-red-300"
-                : room.color === "GREEN"
+                : room.name === "Green"
                 ? "row-span-2 bg-lime-300"
-                : room.color === "BLUE"
+                : room.name === "Blue"
                 ? "row-span-2 bg-blue-300"
-                : room.color === "MID"
+                : room.name === "Mid"
                 ? "bg-gray-300"
                 : "col-span-2 bg-yellow-300"
             }`}
-            onClick={onRoomSelected}>
+            // onClick={onRoomSelected}
+          >
             {room.characterList.map((character) => (
               <div
                 key={character.id}
-                className={`h-[3rem] w-[3rem] text-lg border border-black rounded-lg flex justify-center items-center p-2 m-2 ${
-                  selectedCharacter == character.id
-                    ? "bg-black text-white"
-                    : "bg-white text-black hover:bg-gray-200"
+                className={`h-[5rem] min-w-[5rem] max-w-[10rem] text-lg border border-black rounded-lg flex justify-center items-center m-2 text-center px-3 py-2"
                 }`}
                 character-id={character.id}
-                onClick={onCharacterSelected}>
-                {character.id}
+                // onClick={onCharacterSelected}
+              >
+                {character.name}
               </div>
             ))}
           </div>
         ))}
       </div>
-
-      {/* Kill Button Section */}
-      {diceRollColor === "BLACK" && selectedCharacter !== -1 ? (
-        <button
-          className="w-[20%] absolute bottom-5 rounded-lg bg-red-800 text-white text-center py-2 px-5 flex justify-center items-center"
-          onClick={onKillButtonClick}>
-          Kill
-        </button>
-      ) : (
-        <></>
-      )}
-
-      {
-        // Player Card Reveal Section
-        gameStatus === GameStatus.PLAYER_CARD_REVEAL ? (
-          <div className="h-full w-full absolute top-0 left-0">
-            <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-            <div
-              className={`h-full w-full flex flex-col justify-center items-center p-10 z-[20] ${
-                isPlayerCardRevealed ? "" : "hidden"
-              }`}>
-              <span className="text-[3rem] font-bold">
-                Player {currentPlayerCardReveal.playerId + 1} Card Reveal
-              </span>
-              <div className="h-[75%] w-[30%] bg-white rounded-xl m-10 flex justify-center items-center z-[20]">
-                <span className="text-[10rem] font-bold">{currentPlayerCardReveal.id}</span>
-              </div>
-            </div>
-            <div
-              className={`h-full w-full absolute flex justify-center items-center p-10 z-[20] ${
-                isPlayerCardRevealed ? "hidden" : ""
-              }`}>
-              <span className="text-[4rem] font-bold bg-white py-5 px-10 rounded-xl">
-                Ready Player {currentPlayerCardReveal.playerId + 1}
-              </span>
-            </div>
-          </div>
-        ) : gameStatus === GameStatus.SETUP || gameStatus === GameStatus.PLAYER_TURN ? (
-          <></>
-        ) : (
-          // Player Turn Section
-          <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
-            <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-            <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20]">
-              {gameStatus === "START"
-                ? "GAME START"
-                : gameStatus === "PLAYER_TURN_START"
-                ? "PLAYER " + (playerSequence[0] + 1) + "'S TURN"
-                : gameStatus === "PLAYER_TURN_DICE_ROLL"
-                ? "DICE ROLL: " + diceRollColor
-                : ""}
-            </div>
-          </div>
-        )
-        // gameStatus === "START" ? (
-        //   <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
-        //     <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-        //     <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20]">
-        //       GAME START
-        //     </div>
-        //   </div>
-        // ) : gameStatus === "PLAYER_TURN_START" ? (
-        //   <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
-        //     <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-        //     <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20] text-center">
-        //       {"PLAYER " + (playerSequence[0] + 1) + "'S TURN"}
-        //     </div>
-        //   </div>
-        // ) : gameStatus === "PLAYER_TURN_DICE_ROLL" ? (
-        //   <div className="h-full w-full absolute top-0 left-0 flex justify-center items-center">
-        //     <div className="h-full w-full absolute top-0 left-0 fixed bg-gray-500 opacity-30 z-[10]"></div>
-        //     <div className="h-1/2 w-1/2 bg-white flex justify-center items-center text-[4rem] font-bold rounded-xl p-10 z-[20] text-center">
-        //       {"DICE ROLL: " + diceRollColor}
-        //     </div>
-        //   </div>
-      }
     </div>
   );
-}
+};
 
 export default CostumePartyDetective;
