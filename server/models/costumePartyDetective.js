@@ -1,4 +1,5 @@
 const GameList = require("./gameList");
+const { IoMessage, IoMessageStatus } = require("./ioMessage.js");
 
 class Character {
   constructor(name, playerSocketId = null) {
@@ -99,6 +100,25 @@ class CostumePartyDetective {
 
       this.roomList.push(newRoom);
     });
+  }
+
+  InitialiseGameData(playerSocketId) {
+    for (var i = 0; i < this.characterList.length; i++) {
+      if (this.characterList[i].playerSocketId == playerSocketId) {
+        var msg = new IoMessage();
+        msg.status = IoMessageStatus.Success;
+        msg.message = "Player information retrieved successfully.";
+        msg.data.character = this.characterList[i];
+        msg.data.roomList = this.roomList;
+        msg.data.playerSequence = this.playerSequence;
+        return msg;
+      }
+    }
+    
+    var msg = new IoMessage();
+    msg.status = IoMessage.Fail;
+    msg.message = "Player not found.";
+    return msg;
   }
 
   EventHandler(msg) {

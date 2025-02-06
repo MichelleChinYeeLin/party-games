@@ -242,6 +242,23 @@ class LobbyTree {
     return msg;
   }
 
+  static GetLobbyPlayerList(lobbyRoomCode) {
+    for (var i = 0; i < this.lobbyRoomList.length; i++) {
+      if (this.lobbyRoomList[i].lobbyRoomCode == lobbyRoomCode) {
+        var msg = new IoMessage();
+        msg.status = IoMessageStatus.Success;
+        msg.message = "Lobby player number retrieved successfully.";
+        msg.data = this.lobbyRoomList[i].playerList;
+        return msg;
+      }
+    }
+
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Lobby not found.";
+    return msg;
+  }
+
   static GetGameInformation(gameName) {
     var msg = GameList.GetGameInformation(gameName);
     return msg;
@@ -349,6 +366,21 @@ this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
     } else {
       return false;
     }
+  }
+
+  static InitialiseGameData(playerSocketId) {
+    for (var i = 0; i < this.lobbyRoomList.length; i++) {
+      if (this.lobbyRoomList[i].IsExistingPlayerSocketId(playerSocketId)) {
+        console.log("test");
+        var lobbyRoomCode = this.lobbyRoomList[i].lobbyRoomCode;
+        return this.lobbyGameMap.get(lobbyRoomCode).InitialiseGameData(playerSocketId);
+      }
+    }
+    
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Player not found.";
+    return msg;
   }
 
   static GenerateRoomCode() {

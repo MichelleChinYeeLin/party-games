@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const Lobby = require("./modules/lobby.js");
+const GameManager = require("./modules/gameManager.js");
 
 // Socket IO setup
 const app = express();
@@ -14,6 +15,7 @@ app.use(cors());
 io.on("connection", function (socket) {
   Lobby.ioSocketListener(io, socket);
   Lobby.apiHelper(app, io);
+  GameManager.ioSocketListener(io, socket);
 });
 
 // Start the server
