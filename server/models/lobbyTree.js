@@ -11,6 +11,16 @@ class LobbyNode {
     this.logs = [];
   }
 
+  GetLobbyRoomCode() {
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Success;
+    msg.message = "Lobby room code retrieved successfully.";
+    msg.data = {
+      lobbyRoomCode: this.lobbyRoomCode
+    };
+    return msg;
+  }
+
   GetPlayerInformation(playerSocketId) {
     for (var i = 0; i < this.playerList.length; i++) {
       if (this.playerList[i].playerSocketId == playerSocketId) {
@@ -199,6 +209,19 @@ class LobbyTree {
     return msg;
   }
 
+  static GetPlayerLobby(playerSocketId) {
+    for (var i = 0; i < this.lobbyRoomList.length; i++) {
+      if (this.lobbyRoomList[i].IsExistingPlayerSocketId(playerSocketId)) {
+        return this.lobbyRoomList[i].GetLobbyRoomCode();
+      }
+    }
+
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Player not found.";
+    return msg;
+  }
+
   static GetPlayerNicknameList(lobbyRoomCode) {
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
       if (this.lobbyRoomList[i].lobbyRoomCode == lobbyRoomCode) {
@@ -309,7 +332,7 @@ class LobbyTree {
 
         // If lobby does not contain other players, remove lobby and game var
         if (this.lobbyRoomList[i].IsEmptyPlayerList()) {
-this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
+          this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
           msg.message = " Lobby removed due to inactivity.";
         }
 
@@ -322,8 +345,8 @@ this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
     }
 
     var msg = new IoMessage();
-      msg.status = IoMessageStatus.Fail;
-      msg.message = "Player not found.";
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Player not found.";
     return msg;
   }
 
@@ -368,12 +391,11 @@ this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
     }
   }
 
-  static InitialiseGameData(playerSocketId) {
+  static GetGameDetails(playerSocketId) {
     for (var i = 0; i < this.lobbyRoomList.length; i++) {
       if (this.lobbyRoomList[i].IsExistingPlayerSocketId(playerSocketId)) {
-        console.log("test");
         var lobbyRoomCode = this.lobbyRoomList[i].lobbyRoomCode;
-        return this.lobbyGameMap.get(lobbyRoomCode).InitialiseGameData(playerSocketId);
+        return this.lobbyGameMap.get(lobbyRoomCode).GetGameDetails(playerSocketId);
       }
     }
     
@@ -381,6 +403,18 @@ this.lobbyGameMap.delete(this.lobbyRoomList[i].lobbyRoomCode);
     msg.status = IoMessageStatus.Fail;
     msg.message = "Player not found.";
     return msg;
+  }
+
+  static TriggerGameDataEvent(lobbyRoomCode, data) {
+    // Trigger event in the game data and update it in the map
+    if (this.lobbyGameMap.get(lobbyRoomCode) == null) {
+      var msg = new IoMessage();
+      msg.status = IoMessageStatus.Fail;
+      msg.message = "Lobby not found.";
+      return msg;
+    }
+    
+    return this.lobbyGameMap.get(lobbyRoomCode).EventHandler(data);
   }
 
   static GenerateRoomCode() {

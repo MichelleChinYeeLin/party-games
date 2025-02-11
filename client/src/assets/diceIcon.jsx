@@ -3,7 +3,7 @@ import React from "react";
 const DiceIcon = () => {
   return (
     <svg
-      fill="#000000"
+      fill="currentColor"
       height="100%"
       width="100%"
       version="1.1"
