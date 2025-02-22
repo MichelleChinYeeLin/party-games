@@ -5,7 +5,6 @@ class Character {
   constructor(name, playerSocketId = null) {
     this.name = name;
     this.playerSocketId = playerSocketId;
-    this.isAlive = true;
   }
 }
 
@@ -61,7 +60,7 @@ class CostumePartyDetective {
       var randomNum = Math.floor(Math.random() * this.characterList.length);
 
       // If character is already assigned to another player
-      while (this.characterList[randomNum].playerSocketId != null) {
+      while (this.characterList[randomNum].playerSocketId != undefined) {
         randomNum = Math.floor(Math.random() * this.characterList.length);
       }
       this.characterList[randomNum].playerSocketId = player.playerSocketId;
@@ -95,7 +94,9 @@ class CostumePartyDetective {
       while (newRoom.characterList.length < roomCharacterNum) {
         var randomNum = Math.floor(Math.random() * tempCharacterList.length);
         newRoom.characterList.push(tempCharacterList[randomNum]);
-        tempCharacterList = tempCharacterList.filter((character) => character.name != tempCharacterList[randomNum].name);
+        tempCharacterList = tempCharacterList.filter(
+          (character) => character.name != tempCharacterList[randomNum].name
+        );
       }
 
       this.roomList.push(newRoom);
@@ -116,10 +117,34 @@ class CostumePartyDetective {
         msg.data.playerSequence = this.playerSequence;
         msg.data.currentPlayerTurn = this.playerSequence[0];
         msg.data.diceRollResult = this.diceRollResult;
+
+        // Check if there are other characters in the room
+        var isFound = false;
+        // console.log(this.playerSequence[0]);
+        for (var roomIndex = 0; roomIndex < this.roomList.length; roomIndex++) {
+          for (
+            var characterIndex = 0;
+            characterIndex < this.roomList[roomIndex].characterList.length;
+            characterIndex++
+          ) {
+            if (
+              this.roomList[roomIndex].characterList[characterIndex].playerSocketId ==
+              this.playerSequence[0].playerSocketId
+            ) {
+              msg.data.roomCharacterCount = this.roomList[roomIndex].characterList.length;
+              isFound = true;
+              break;
+            }
+          }
+
+          if (isFound) {
+            break;
+          }
+        }
         return msg;
       }
     }
-    
+
     var msg = new IoMessage();
     msg.status = IoMessage.Fail;
     msg.message = "Player not found.";
@@ -134,14 +159,19 @@ class CostumePartyDetective {
       case "move-character":
         msg = this.MoveCharacter(data);
         break;
+      case "eliminate-character":
+        msg = this.EliminateCharacter(data);
+        break;
+      case "eliminate-random-character":
+        msg = this.EliminateRandomCharacter();
+        break;
       default:
         msg = new IoMessage();
         msg.status = IoMessageStatus.Fail;
         msg.message = "Event invalid.";
         break;
     }
-    
-    console.log(msg);
+
     return msg;
   }
 
@@ -171,12 +201,18 @@ class CostumePartyDetective {
           isFound = true;
 
           // If the current room is connected to the new room
-          if (connectingRooms.includes(newRoom) && (newRoom == this.diceRollResult || this.roomList[i].name == this.diceRollResult)) {
+          if (
+            connectingRooms.includes(newRoom) &&
+            (newRoom == this.diceRollResult || this.roomList[i].name == this.diceRollResult)
+          ) {
             character = this.roomList[i].characterList[j];
             currentRoom = this.roomList[i].name;
             characterIndex = j;
             msg.status = IoMessageStatus.Success;
             msg.message = "Character moved successfully.";
+            msg.data = {
+              gameStatus: "game-continue",
+            };
             isValidMove = true;
             break;
           }
@@ -202,20 +238,139 @@ class CostumePartyDetective {
       }
 
       this.FinishPlayerTurn();
-    }
-    else if (isFound && !isValidMove) {
+    } else if (isFound && !isValidMove) {
       msg.status = IoMessageStatus.Fail;
-      msg.message = "Character's current room is not connected to the selected room. Please try again.";
-    }
-    else {
+      msg.message =
+        "Character's current room is not connected to the selected room. Please try again.";
+    } else {
       msg.status = IoMessageStatus.Fail;
       msg.message = "Character not found.";
     }
     return msg;
   }
 
+  EliminateCharacter(data) {
+    var currentPlayerTurn = this.playerSequence[0];
+    var selectedCharacter = data.character;
+
+    // If the selected character is ownself, return error
+    if (currentPlayerTurn.name == selectedCharacter) {
+      var msg = new IoMessage();
+      msg.status = IoMessageStatus.Fail;
+      msg.message = "Character selected is ownself! Please choose a different character.";
+      return msg;
+    }
+
+    // Find current player's room
+    for (var i = 0; i < this.roomList.length; i++) {
+      var roomCharacterList = this.roomList[i].characterList.filter(
+        (character) =>
+          character.playerSocketId != null &&
+          character.playerSocketId == currentPlayerTurn.playerSocketId
+      );
+
+      // If its the player's room
+      if (roomCharacterList.length > 0) {
+        // Find the character to be eliminated
+        for (
+          var characterIndex = 0;
+          characterIndex < this.roomList[i].characterList.length;
+          characterIndex++
+        ) {
+          if (this.roomList[i].characterList[characterIndex].name == selectedCharacter) {
+            // Remove eliminated player from the player sequence
+            if (this.roomList[i].characterList[characterIndex].playerSocketId != undefined) {
+              this.playerSequence = this.playerSequence.filter(
+                (player) =>
+                  player.playerSocketId !=
+                  this.roomList[i].characterList[characterIndex].playerSocketId
+              );
+
+              // All players other than the current player are eliminated
+              if (this.playerSequence.length == 1) {
+                var msg = new IoMessage();
+                msg.status = IoMessageStatus.Success;
+                msg.message = "The last player has been eliminated!";
+                msg.data = {
+                  winnerSocketId: this.playerSequence[0].playerSocketId,
+                  gameStatus: "game-end",
+                };
+                return msg;
+              }
+            }
+
+            var msg = new IoMessage();
+            msg.status = IoMessageStatus.Success;
+            msg.message = "Character eliminated successfully.";
+            msg.data = {
+              eliminatedCharacter: selectedCharacter,
+              eliminatedPlayerSocketId:
+                this.roomList[i].characterList[characterIndex].playerSocketId,
+              gameStatus: "game-continue",
+            };
+
+            // Remove character from room
+            this.roomList[i].characterList.splice(characterIndex, 1);
+            this.FinishPlayerTurn();
+            return msg;
+          }
+        }
+      }
+    }
+
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Player character not found.";
+    return msg;
+  }
+
+  EliminateRandomCharacter() {
+    var tempList = [];
+
+    // Combine all characters in all rooms
+    this.roomList.forEach((room) => {
+      room.characterList.forEach((character) => {
+        if (character.playerSocketId == null) {
+          tempList.push(character);
+        }
+      });
+    });
+
+    // Get random character
+    var randomIndex = Math.floor(Math.random() * tempList.length);
+    var eliminatedCharacter = tempList[randomIndex];
+
+    // Eliminate random character
+    for (var i = 0; i < this.roomList.length; i++) {
+      for (
+        var characterIndex = 0;
+        characterIndex < this.roomList[i].characterList.length;
+        characterIndex++
+      ) {
+        if (this.roomList[i].characterList[characterIndex].name == eliminatedCharacter.name) {
+          this.roomList[i].characterList.splice(characterIndex, 1);
+          this.FinishPlayerTurn();
+
+          var msg = new IoMessage();
+          msg.status = IoMessageStatus.Success;
+          msg.message = "Random character eliminated successfully.";
+          return msg;
+        }
+      }
+    }
+
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Fail;
+    msg.message = "Unexpected error occurred.";
+    return msg;
+  }
+
   FinishPlayerTurn() {
     this.diceRollResult = this.RollDice();
+
+    // Remove the first player in the sequence and add it as the last player
+    var player = this.playerSequence.splice(0, 1);
+    this.playerSequence.push(player[0]);
   }
 
   RollDice() {

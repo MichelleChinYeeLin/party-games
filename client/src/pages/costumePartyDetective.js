@@ -11,6 +11,8 @@ const CostumePartyDetective = ({ socket }) => {
   const [currentPlayerTurn, setCurrentPlayerTurn] = useState("");
   const [isPlayerTurn, setIsPlayerTurn] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState("");
+  const [randomEliminationCount, setRandomEliminationCount] = useState(3);
+  const [roomCharacterCount, setRoomCharacterCount] = useState(0);
 
   useEffect(() => {
     var msg = new IoMessage();
@@ -24,6 +26,7 @@ const CostumePartyDetective = ({ socket }) => {
       setCurrentPlayerTurn(receivedMsg.data.currentPlayerTurn.playerNickname);
       setIsPlayerTurn(receivedMsg.data.currentPlayerTurn.playerSocketId == socket.id);
       setDiceRollResult(receivedMsg.data.diceRollResult);
+      setRoomCharacterCount(receivedMsg.data.roomCharacterCount);
     });
 
     socket.on("error-message", (msg) => {
@@ -41,7 +44,6 @@ const CostumePartyDetective = ({ socket }) => {
       room: room,
     };
     socket.emit("game-event", msg);
-    setIsPlayerTurn(false);
   }
 
   function ClickShowingPlayerCharacterButton() {
@@ -70,9 +72,36 @@ const CostumePartyDetective = ({ socket }) => {
     }
   }
 
+  function ClickEliminateSelectedCharacter() {
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Normal;
+    msg.message = "Requesting to eliminate character";
+    msg.data = {
+      event: "eliminate-character",
+      character: selectedCharacter,
+    };
+
+    socket.emit("game-event", msg);
+  }
+
+  function ClickEliminateRandomCharacter() {
+    if (randomEliminationCount < 1) {
+      return;
+    }
+    var msg = new IoMessage();
+    msg.status = IoMessageStatus.Normal;
+    msg.message = "Requesting to eliminate random character";
+    msg.data = {
+      event: "eliminate-random-character",
+    };
+
+    socket.emit("game-event", msg);
+    setRandomEliminationCount(randomEliminationCount - 1);
+  }
+
   return (
-    <div className="h-full w-full flex flex-col justify-center items-center">
-      <div className="h-[4rem] w-fit-content absolute fixed left-10 top-5 flex items-center">
+    <div className="h-full w-full flex flex-col items-center">
+      <div className="h-[5rem] w-full flex justify-start items-center px-5 py-3 mt-5">
         <div className="h-full flex">
           <div
             className={`h-full ${
@@ -118,7 +147,7 @@ const CostumePartyDetective = ({ socket }) => {
       ) : (
         <></>
       )}
-      <div className="h-[70%] w-[70%] grid grid-cols-3 gap-0">
+      <div className="h-[70%] w-[70%] grid grid-cols-3 gap-0 mt-10">
         {roomList.map((room, _index) => (
           <div
             key={room.name}
@@ -148,13 +177,23 @@ const CostumePartyDetective = ({ socket }) => {
           </div>
         ))}
       </div>
-      {diceRollResult == "Black" ? (
-        <div className="h-[5rem] w-[70%] absolute bottom-5 flex justify-center mt-10">
+      {diceRollResult == "Black" && isPlayerTurn ? (
+        <div className="h-[5rem] w-[70%] flex justify-center mt-10">
           <div className="w-[30%] flex flex-col items-center justify-start ml-10 mr-10">
-            <button className="h-[3rem] w-full bg-black text-white rounded-lg font-bold text-xl">Kill Random</button>
-            <span className="text-md">Remaining Count: {3}/3</span>
+            <button
+              className={`h-[3rem] w-full bg-black text-white rounded-lg font-bold text-xl ${
+                randomEliminationCount < 1 ? "disabled" : "enabled"
+              }`}
+              onClick={ClickEliminateRandomCharacter}>
+              Eliminate Random
+            </button>
+            <span className="text-md">Remaining Count: {randomEliminationCount}/3</span>
           </div>
-          <button className="h-[3rem] w-[30%] bg-red-700 text-white rounded-lg ml-10 mr-10 font-bold text-xl">Kill Selected</button>
+          <button
+            className="h-[3rem] w-[30%] bg-red-700 text-white rounded-lg ml-10 mr-10 font-bold text-xl"
+            onClick={ClickEliminateSelectedCharacter}>
+            {roomCharacterCount > 1 ? "Eliminate Selected" : "Eliminate Ownself"}
+          </button>
         </div>
       ) : (
         <></>
