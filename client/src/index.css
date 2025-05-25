@@ -108,4 +108,29 @@ span.card-description {
   background-color: #000000;
   opacity: 0.7;
   z-index: 100;
+  animation: modal-backdrop-fade-in 2s;
+}
+
+#join-lobby-modal {
+  animation: zoom-join-lobby-modal 2s;
+}
+
+@keyframes zoom-join-lobby-modal {
+  0% {
+    height: fit-content;
+    width: 20%;
+  }
+  100% {
+    height: fit-content;
+    width: 30%;
+  }
+}
+
+@keyframes modal-backdrop-fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0.7;
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "../index.css";
 
@@ -9,7 +9,8 @@ const Home = ({ socket }) => {
 
   const navigate = useNavigate();
   const [isShowingJoinDetails, setIsShowingJoinDetails] = useState(false);
-  const [roomCode, setRoomCode] = useState("");
+  const [roomCodeCharArr, setRoomCodeCharArr] = useState(["", "", "", ""]);
+  const roomCodeInputRef = [useRef(null), useRef(null), useRef(null), useRef(null)];
   const [isLoading, setIsLoading] = useState(false);
 
   // Socket event listeners
@@ -51,13 +52,19 @@ const Home = ({ socket }) => {
     });
   }, []);
 
+  useEffect(() => {
+    if (isShowingJoinDetails) {
+      setRoomCodeCharArr(["", "", "", ""]);
+      roomCodeInputRef[0].current?.focus();
+    }
+  }, [isShowingJoinDetails]);
+
   function ToggleDetailsContainer(event) {
     const containerType = event.target.getAttribute("data-buttontype");
     if (containerType === "create") {
       setIsShowingJoinDetails(false);
     } else {
       setIsShowingJoinDetails(!isShowingJoinDetails);
-      setRoomCode("");
     }
   }
 
@@ -75,14 +82,38 @@ const Home = ({ socket }) => {
     msg.message = "Requesting to join a lobby.";
     msg.status = IoMessageStatus.Normal;
     msg.data = {
-      roomCode: roomCode,
+      roomCode: roomCodeCharArr.join(""),
     };
     socket.emit("join-room", msg);
   }
 
   function InputLobbyRoomCode(event) {
-    const code = event.target.value;
-    setRoomCode(code.toUpperCase());
+    const charIndex = parseInt(event.target.getAttribute("data-index"));
+    var currentCharArr = roomCodeCharArr;
+
+    const codeChar = event.target.value.toUpperCase();
+    if (charIndex < roomCodeInputRef.length - 1) {
+      roomCodeInputRef[charIndex + 1].current?.focus();
+    }
+    currentCharArr[charIndex] = codeChar;
+
+    setRoomCodeCharArr([...currentCharArr]);
+  }
+
+  function InputLobbyRoomCodeBackspace(event) {
+    const charIndex = parseInt(event.target.getAttribute("data-index"));
+    var currentCharArr = roomCodeCharArr;
+
+    if (event.key === "Backspace") {
+      if (currentCharArr[charIndex] != "") {
+        currentCharArr[charIndex] = "";
+      } else if (charIndex > 0) {
+        currentCharArr[charIndex - 1] = "";
+        roomCodeInputRef[charIndex - 1].current?.focus();
+      }
+    }
+
+    setRoomCodeCharArr([...currentCharArr]);
   }
 
   return (
@@ -139,7 +170,7 @@ const Home = ({ socket }) => {
       {isShowingJoinDetails ? (
         <div className="h-screen w-screen absolute flex justify-center items-center">
           <div className="modal-backdrop"></div>
-          <div className="w-[40%] bg-[#F5F5F5] p-5 rounded-lg z-[200] relative flex flex-col">
+          <div id="join-lobby-modal" className="w-[30%] bg-[#F5F5F5] p-5 rounded-lg z-[200] relative flex flex-col">
             <button
               className="absolute p-3 top-0 right-0"
               data-buttontype="close"
@@ -148,13 +179,20 @@ const Home = ({ socket }) => {
             </button>
             <span className="w-full text-center font-bold text-3xl mt-5 mb-8">LOBBY DETAILS</span>
             <div className="h-fit-content w-full flex flex-col">
-              <span className="font-bold text-lg px-3 py-2">ROOM CODE</span>
-              <input
-                type="text"
-                className="h-fit-content w-full bg-white py-2 px-3 border border-gray-400 rounded-lg focus:outline-none"
-                placeholder="ENTER ROOM CODE"
-                onChange={InputLobbyRoomCode}
-                value={roomCode}></input>
+              <span className="font-bold text-lg py-2">ROOM CODE</span>
+              <div className="h-[8rem] w-full flex justify-between align-center py-3">
+                {roomCodeCharArr.map((codeChar, index) => (
+                  <input
+                    type="text"
+                    data-index={index}
+                    maxLength={1}
+                    className="h-full w-[20%] bg-white py-2 px-3 text-[3rem] text-center border border-gray-400 rounded-lg focus:outline-none"
+                    onChange={InputLobbyRoomCode}
+                    onKeyDown={InputLobbyRoomCodeBackspace}
+                    ref={roomCodeInputRef[index]}
+                    value={codeChar}></input>
+                ))}
+              </div>
             </div>
             <button
               className="w-full font-bold text-lg text-white px-5 py-2 bg-blue-600 mt-4 rounded-lg"
