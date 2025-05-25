@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import { IoMessage, IoMessageStatus } from "../models/ioMessage.js";
 import { DiceIcon, RoleIcon, ProfileIcon } from "../assets/assetLibrary.jsx";
+import "../css/costumePartyDetective.css";
 
 const CostumePartyDetective = ({ socket }) => {
   const [playerCharacter, setPlayerCharacter] = useState("");
@@ -16,6 +17,8 @@ const CostumePartyDetective = ({ socket }) => {
   const [isShowingEndGameContainer, setIsShowingEndGameContainer] = useState(false);
   const [endGameMessage, setEndGameMessage] = useState("");
   const [isEliminated, setIsEliminated] = useState(false);
+  const [isShowingNotificationModal, setIsShowingNotificationModal] = useState(false);
+  const [notificationText, setNotificationText] = useState("");
 
   useEffect(() => {
     var msg = new IoMessage();
@@ -27,15 +30,21 @@ const CostumePartyDetective = ({ socket }) => {
       if (receivedMsg.data.gameStatus == "game-end") {
         setIsShowingEndGameContainer(true);
         setEndGameMessage(receivedMsg.message);
-      }
-      else {
+      } else {
         setPlayerCharacter(receivedMsg.data.character.name);
         setRoomList(receivedMsg.data.roomList);
         setCurrentPlayerTurn(receivedMsg.data.currentPlayerTurn.playerNickname);
         setIsPlayerTurn(receivedMsg.data.currentPlayerTurn.playerSocketId == socket.id);
+
+        if (receivedMsg.data.currentPlayerTurn.playerSocketId == socket.id) {
+          setNotificationText("Your Turn");
+        } else {
+          setNotificationText(`${currentPlayerTurn}'s Turn`);
+        }
         setDiceRollResult(receivedMsg.data.diceRollResult);
         setRoomCharacterCount(receivedMsg.data.roomCharacterCount);
         setIsEliminated(receivedMsg.data.isEliminated);
+        setIsShowingNotificationModal(true);
       }
     });
 
@@ -43,6 +52,16 @@ const CostumePartyDetective = ({ socket }) => {
       console.log(msg.message);
     });
   }, []);
+
+  useEffect(() => {
+    if (isShowingNotificationModal) {
+      const notificationTimer = setTimeout(() => {
+        setIsShowingNotificationModal(false);
+      }, 7000);
+
+      return () => clearTimeout(notificationTimer);
+    }
+  }, [isShowingNotificationModal]);
 
   function MoveCharacter(character, room) {
     var msg = new IoMessage();
@@ -178,7 +197,9 @@ const CostumePartyDetective = ({ socket }) => {
               <button
                 key={character.name}
                 className={`h-[5rem] min-w-[5rem] max-w-[10rem] text-lg border border-black rounded-lg flex justify-center items-center m-2 text-center px-3 py-2 
-                  ${selectedCharacter === character.name ? "bg-gray-300" : "bg-white"} shadow z-10 ${isEliminated ? "cursor-not-allowed" : "cursor-pointer"}`}
+                  ${
+                    selectedCharacter === character.name ? "bg-gray-300" : "bg-white"
+                  } shadow z-10 ${isEliminated ? "cursor-not-allowed" : "cursor-pointer"}`}
                 disabled={isEliminated}
                 data-character={character.name}
                 onClick={ClickCharacterButton}>
@@ -192,8 +213,7 @@ const CostumePartyDetective = ({ socket }) => {
         <div className="w-full">
           <span className="w-full text-center">{endGameMessage}</span>
         </div>
-      ) : 
-      diceRollResult == "Black" && isPlayerTurn ? (
+      ) : diceRollResult == "Black" && isPlayerTurn ? (
         <div className="h-[5rem] w-[70%] flex justify-center mt-10">
           <div className="w-[30%] flex flex-col items-center justify-start ml-10 mr-10">
             <button
@@ -210,6 +230,18 @@ const CostumePartyDetective = ({ socket }) => {
             onClick={ClickEliminateSelectedCharacter}>
             {roomCharacterCount > 1 ? "Eliminate Selected" : "Eliminate Ownself"}
           </button>
+        </div>
+      ) : (
+        <></>
+      )}
+
+      {/* Notification Modal */}
+      {isShowingNotificationModal ? (
+        <div className="h-full w-full flex justify-center items-center absolute">
+          <div className="notification-modal-backdrop"></div>
+          <div className="notification-modal">
+            <span>{notificationText}</span>
+          </div>
         </div>
       ) : (
         <></>

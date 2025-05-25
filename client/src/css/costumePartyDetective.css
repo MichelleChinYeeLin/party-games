@@ -1,0 +1,95 @@
+.notification-modal-backdrop {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  background-color: #000000;
+  z-index: 125;
+  animation: modal-backdrop-fade-in-fade-out 7s;
+}
+
+.notification-modal {
+  height: 40%;
+  width: 40%;
+  background-color: white;
+  border-radius: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 150;
+  animation: notification-modal-expand-contract 7s;
+}
+
+.notification-modal span {
+  color: black;
+  font-size: 3.5rem;
+  padding: 1rem;
+  animation: notification-modal-span-fade-in-fade-out 7s;
+}
+
+@keyframes modal-backdrop-fade-in-fade-out {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.7;
+  }
+  90% {
+    opacity: 0.7;
+  }
+  95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes notification-modal-expand-contract {
+  0% {
+    opacity: 0;
+    width: 25%;
+  }
+  10% {
+    opacity: 1;
+    width: 25%;
+  }
+  20% {
+    opacity: 1;
+    width: 40%;
+  }
+  80% {
+    opacity: 1;
+    width: 40%;
+  }
+  90% {
+    opacity: 1;
+    width: 25%;
+  }
+  95% {
+    opacity: 0;
+    width: 25%;
+  }
+  100% {
+    opacity: 0;
+    width: 25%;
+  }
+}
+
+@keyframes notification-modal-span-fade-in-fade-out {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
