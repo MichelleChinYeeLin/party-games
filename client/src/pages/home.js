@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "../index.css";
+import "../css/index.css";
 
 const { IoMessageStatus, IoMessage } = require("../models/ioMessage.js");
 

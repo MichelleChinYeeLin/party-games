@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'Parisienne';
-  src: url('../public/assets/fonts/Parisienne-Regular.ttf') format('truetype');
+  src: url('../../public/assets/fonts/Parisienne-Regular.ttf') format('truetype');
 }
 
 body {
