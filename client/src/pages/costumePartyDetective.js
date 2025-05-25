@@ -13,6 +13,9 @@ const CostumePartyDetective = ({ socket }) => {
   const [selectedCharacter, setSelectedCharacter] = useState("");
   const [randomEliminationCount, setRandomEliminationCount] = useState(3);
   const [roomCharacterCount, setRoomCharacterCount] = useState(0);
+  const [isShowingEndGameContainer, setIsShowingEndGameContainer] = useState(false);
+  const [endGameMessage, setEndGameMessage] = useState("");
+  const [isEliminated, setIsEliminated] = useState(false);
 
   useEffect(() => {
     var msg = new IoMessage();
@@ -21,12 +24,19 @@ const CostumePartyDetective = ({ socket }) => {
 
     socket.emit("initialise-game-alert", msg);
     socket.on("update-game-alert", (receivedMsg) => {
-      setPlayerCharacter(receivedMsg.data.character.name);
-      setRoomList(receivedMsg.data.roomList);
-      setCurrentPlayerTurn(receivedMsg.data.currentPlayerTurn.playerNickname);
-      setIsPlayerTurn(receivedMsg.data.currentPlayerTurn.playerSocketId == socket.id);
-      setDiceRollResult(receivedMsg.data.diceRollResult);
-      setRoomCharacterCount(receivedMsg.data.roomCharacterCount);
+      if (receivedMsg.data.gameStatus == "game-end") {
+        setIsShowingEndGameContainer(true);
+        setEndGameMessage(receivedMsg.message);
+      }
+      else {
+        setPlayerCharacter(receivedMsg.data.character.name);
+        setRoomList(receivedMsg.data.roomList);
+        setCurrentPlayerTurn(receivedMsg.data.currentPlayerTurn.playerNickname);
+        setIsPlayerTurn(receivedMsg.data.currentPlayerTurn.playerSocketId == socket.id);
+        setDiceRollResult(receivedMsg.data.diceRollResult);
+        setRoomCharacterCount(receivedMsg.data.roomCharacterCount);
+        setIsEliminated(receivedMsg.data.isEliminated);
+      }
     });
 
     socket.on("error-message", (msg) => {
@@ -51,7 +61,7 @@ const CostumePartyDetective = ({ socket }) => {
   }
 
   function ClickCharacterButton(event) {
-    if (!isPlayerTurn) {
+    if (!isPlayerTurn || isEliminated) {
       return;
     }
 
@@ -60,7 +70,7 @@ const CostumePartyDetective = ({ socket }) => {
   }
 
   function ClickRoomArea(event) {
-    if (!isPlayerTurn) {
+    if (!isPlayerTurn || isEliminated) {
       return;
     }
 
@@ -168,7 +178,8 @@ const CostumePartyDetective = ({ socket }) => {
               <button
                 key={character.name}
                 className={`h-[5rem] min-w-[5rem] max-w-[10rem] text-lg border border-black rounded-lg flex justify-center items-center m-2 text-center px-3 py-2 
-                  ${selectedCharacter === character.name ? "bg-gray-300" : "bg-white"} shadow z-10`}
+                  ${selectedCharacter === character.name ? "bg-gray-300" : "bg-white"} shadow z-10 ${isEliminated ? "cursor-not-allowed" : "cursor-pointer"}`}
+                disabled={isEliminated}
                 data-character={character.name}
                 onClick={ClickCharacterButton}>
                 {character.name}
@@ -177,7 +188,12 @@ const CostumePartyDetective = ({ socket }) => {
           </div>
         ))}
       </div>
-      {diceRollResult == "Black" && isPlayerTurn ? (
+      {isShowingEndGameContainer ? (
+        <div className="w-full">
+          <span className="w-full text-center">{endGameMessage}</span>
+        </div>
+      ) : 
+      diceRollResult == "Black" && isPlayerTurn ? (
         <div className="h-[5rem] w-[70%] flex justify-center mt-10">
           <div className="w-[30%] flex flex-col items-center justify-start ml-10 mr-10">
             <button

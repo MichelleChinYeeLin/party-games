@@ -118,29 +118,39 @@ class CostumePartyDetective {
         msg.data.currentPlayerTurn = this.playerSequence[0];
         msg.data.diceRollResult = this.diceRollResult;
 
-        // Check if there are other characters in the room
-        var isFound = false;
-        // console.log(this.playerSequence[0]);
-        for (var roomIndex = 0; roomIndex < this.roomList.length; roomIndex++) {
-          for (
-            var characterIndex = 0;
-            characterIndex < this.roomList[roomIndex].characterList.length;
-            characterIndex++
-          ) {
-            if (
-              this.roomList[roomIndex].characterList[characterIndex].playerSocketId ==
-              this.playerSequence[0].playerSocketId
+        // Check if player is eliminated
+        if (
+          this.playerSequence.filter((player) => player.playerSocketId == playerSocketId).length < 1
+        ) {
+          msg.data.isEliminated = true;
+          msg.data.roomCharacterCount = -1;
+        } else {
+          msg.data.isEliminated = false;
+
+          // Check if there are other characters in the room
+          var isFound = false;
+          for (var roomIndex = 0; roomIndex < this.roomList.length; roomIndex++) {
+            for (
+              var characterIndex = 0;
+              characterIndex < this.roomList[roomIndex].characterList.length;
+              characterIndex++
             ) {
-              msg.data.roomCharacterCount = this.roomList[roomIndex].characterList.length;
-              isFound = true;
+              if (
+                this.roomList[roomIndex].characterList[characterIndex].playerSocketId ==
+                this.playerSequence[0].playerSocketId
+              ) {
+                msg.data.roomCharacterCount = this.roomList[roomIndex].characterList.length;
+                isFound = true;
+                break;
+              }
+            }
+
+            if (isFound) {
               break;
             }
           }
-
-          if (isFound) {
-            break;
-          }
         }
+
         return msg;
       }
     }
@@ -285,29 +295,26 @@ class CostumePartyDetective {
                   player.playerSocketId !=
                   this.roomList[i].characterList[characterIndex].playerSocketId
               );
-
-              // All players other than the current player are eliminated
-              if (this.playerSequence.length == 1) {
-                var msg = new IoMessage();
-                msg.status = IoMessageStatus.Success;
-                msg.message = "The last player has been eliminated!";
-                msg.data = {
-                  winnerSocketId: this.playerSequence[0].playerSocketId,
-                  gameStatus: "game-end",
-                };
-                return msg;
-              }
             }
 
             var msg = new IoMessage();
-            msg.status = IoMessageStatus.Success;
-            msg.message = "Character eliminated successfully.";
-            msg.data = {
-              eliminatedCharacter: selectedCharacter,
-              eliminatedPlayerSocketId:
-                this.roomList[i].characterList[characterIndex].playerSocketId,
-              gameStatus: "game-continue",
-            };
+            if (this.playerSequence.length == 1) {
+              msg.status = IoMessageStatus.Success;
+              msg.message = "The last player has been eliminated!";
+              msg.data = {
+                winnerSocketId: this.playerSequence[0].playerSocketId,
+                gameStatus: "game-end",
+              };
+            } else {
+              msg.status = IoMessageStatus.Success;
+              msg.message = "Character eliminated successfully.";
+              msg.data = {
+                eliminatedCharacter: selectedCharacter,
+                eliminatedPlayerSocketId:
+                  this.roomList[i].characterList[characterIndex].playerSocketId,
+                gameStatus: "game-continue",
+              };
+            }
 
             // Remove character from room
             this.roomList[i].characterList.splice(characterIndex, 1);
