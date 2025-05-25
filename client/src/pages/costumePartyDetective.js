@@ -57,7 +57,7 @@ const CostumePartyDetective = ({ socket }) => {
     if (isShowingNotificationModal) {
       const notificationTimer = setTimeout(() => {
         setIsShowingNotificationModal(false);
-      }, 7000);
+      }, 5000);
 
       return () => clearTimeout(notificationTimer);
     }
