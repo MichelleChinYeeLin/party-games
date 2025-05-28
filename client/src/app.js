@@ -7,6 +7,7 @@ import CostumePartyDetective from "./pages/costumePartyDetective.js";
 
 function App() {
   const [isConnected, setIsConnected] = useState(socket.connected);
+  const url = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     function onConnect() {
@@ -32,7 +33,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home socket={socket}/>} />
         <Route path="/home" element={<Home socket={socket}/>} />
-        <Route path="/lobby/" element={<Lobby socket={socket}/>} />
+        <Route path="/lobby/" element={<Lobby socket={socket} url={url}/>} />
         <Route path="/costume-party-detective/" element={<CostumePartyDetective socket={socket}/>} />
       </Routes>
       </BrowserRouter>

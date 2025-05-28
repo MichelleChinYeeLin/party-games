@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Route, useLocation, useNavigate } from "react-router-dom";
 import { IoMessageStatus, IoMessage } from "../models/ioMessage";
 
-const Lobby = ({ socket }) => {
+const Lobby = ({ socket, url }) => {
   var navigate = useNavigate();
   var lobbyData = useLocation();
   const [roomCode, setRoomCode] = useState("");
@@ -70,7 +70,7 @@ const Lobby = ({ socket }) => {
       };
       msg.message = "Requesting to update player nickname.";
 
-      fetch("/lobby/api/set-player-nickname", {
+      fetch(url + "/lobby/api/set-player-nickname", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +94,7 @@ const Lobby = ({ socket }) => {
       };
       msg.message = "Requesting to update lobby game.";
 
-      fetch("/lobby/api/set-lobby-game", {
+      fetch(url + "/lobby/api/set-lobby-game", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,14 +107,14 @@ const Lobby = ({ socket }) => {
   }, [selectedGame]);
 
   function GetPlayerList() {
-    fetch(`/lobby/api/get-player-list/${roomCode}`)
+    fetch(`${url}/lobby/api/get-player-list/${roomCode}`)
       .then((response) => response.json())
       .then((msg) => setPlayerList(msg.data))
       .catch((error) => console.error(error));
   }
 
   function GetPlayerInformation() {
-    fetch(`/lobby/api/get-player-information/${socket.id}`)
+    fetch(`${url}/lobby/api/get-player-information/${socket.id}`)
       .then((response) => response.json())
       .then((msg) => {
         setDefaultPlayerNickname(msg.data.playerNickname);
@@ -124,14 +124,14 @@ const Lobby = ({ socket }) => {
   }
 
   function GetLobbyLogs() {
-    fetch(`/lobby/api/get-lobby-logs/${roomCode}`)
+    fetch(`${url}/lobby/api/get-lobby-logs/${roomCode}`)
       .then((response) => response.json())
       .then((msg) => setLobbyLogs(msg.data))
       .catch((error) => console.error(error));
   }
 
   function GetLobbyGame() {
-    fetch(`/lobby/api/get-lobby-game/${roomCode}`)
+    fetch(`${url}/lobby/api/get-lobby-game/${roomCode}`)
       .then((response) => response.json())
       .then((msg) => {
         setSelectedGame(msg.data.selectedGame);
